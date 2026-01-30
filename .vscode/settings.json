@@ -1,0 +1,9 @@
+{
+  "java.project.sourcePaths": ["."],
+  "java.project.outputPath": "bin",
+  "files.exclude": {
+    "**/.classpath": false,
+    "**/.project": false,
+    "**/.settings": false
+  }
+}
