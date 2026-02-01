@@ -1,0 +1,8 @@
+# titulo;preco;tipo;endereco;idDono;extras...
+# tipo = casa, apartamento, terreno. idDono = índice 1-based do usuário em usuarios.csv
+# casa: extras = quintal (0 ou 1)
+# apartamento: extras = quartos;area;andar;elevador(0 ou 1)
+# terreno: extras = area
+Casa com quintal;350000;casa;Rua A 100;1;1
+Apartamento 2 quartos;280000;apartamento;Av B 200;1;2;60;5;0
+Terreno 300m²;150000;terreno;Rua C 300;2;300

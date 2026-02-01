@@ -4,6 +4,7 @@ import src.br.edu.ifpb.myhome.estado.EstadoAnuncio;
 import src.br.edu.ifpb.myhome.estado.RascunhoState;
 import src.br.edu.ifpb.myhome.imovel.Imovel;
 import src.br.edu.ifpb.myhome.notificacao.Observer;
+import src.br.edu.ifpb.myhome.usuario.Usuario;
 import src.br.edu.ifpb.myhome.visitor.Visitor;
 
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ public class Anuncio {
     private Imovel imovel;
     private EstadoAnuncio estado;
     private List<Observer> observers = new ArrayList<>();
+    private final InteressadosAnuncio interessados = new InteressadosAnuncio();
 
     public Anuncio() {
         this.estado = new RascunhoState();
@@ -59,7 +61,19 @@ public class Anuncio {
     }
 
     public void setEstado(EstadoAnuncio estado) {
+        EstadoAnuncio estadoAnterior = this.estado;
         this.estado = estado;
+        LogMudancaEstado.getInstancia().registrar(this, estadoAnterior, estado);
+        notificar();
+    }
+
+    /** Registra usuário interessado (ex.: quem abriu conversa sobre o anúncio). */
+    public void adicionarInteressado(Usuario u) {
+        interessados.adicionar(u);
+    }
+
+    public List<Usuario> getInteressados() {
+        return interessados.getInteressados();
     }
 
     public String getTitulo() {

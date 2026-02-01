@@ -2,8 +2,12 @@ package src.br.edu.ifpb.myhome.estado;
 
 import src.br.edu.ifpb.myhome.anuncio.Anuncio;
 
+/**
+ * Aprovado: proximo() -> Ativo.
+ * Reprovado: use anuncio.setEstado(new SuspensoState()) para enviar a Suspenso.
+ */
 public class ModeracaoState implements EstadoAnuncio {
-    
+
     @Override
     public void proximo(Anuncio anuncio) {
         anuncio.setEstado(new AtivoState());

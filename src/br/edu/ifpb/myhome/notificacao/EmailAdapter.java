@@ -4,7 +4,7 @@ import src.br.edu.ifpb.myhome.anuncio.Anuncio;
 
 public class EmailAdapter implements ServicoNotificacaoExterno {
 
-    private EmailApi api = new EmailApi();
+    private final EmailApi api = new EmailApi();
 
     @Override
     public void enviarMensagem(Anuncio a) {
