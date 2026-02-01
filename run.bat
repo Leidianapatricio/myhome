@@ -12,15 +12,15 @@ if %errorlevel% equ 0 (
 
 echo Maven nao encontrado. Usando JDK (javac + java)...
 if not exist bin mkdir bin
-dir /s /b src\*.java > javelist.txt 2>nul
+dir /s /b src\main\java\*.java > javelist.txt 2>nul
 if not exist javelist.txt (
-  echo Erro: nenhum arquivo .java em src\
+  echo Erro: nenhum arquivo .java em src\main\java\
   goto fim
 )
-javac -d bin -encoding UTF-8 -sourcepath src @javelist.txt
+javac -d bin -encoding UTF-8 -sourcepath src\main\java @javelist.txt
 del javelist.txt 2>nul
 if %errorlevel% equ 0 (
-  java -cp bin src.br.edu.ifpb.myhome.Main
+  java -cp bin br.edu.ifpb.myhome.Main
 ) else (
   echo Erro na compilacao. Verifique se o JDK 11+ esta instalado: javac -version
 )

@@ -86,7 +86,7 @@ Ou use o script:
 Se não tiver Maven, compile todos os `.java` dentro de `src/` com `javac` (saída em `bin/`) e execute:
 
 ```bash
-java -cp bin src.br.edu.ifpb.myhome.Main
+java -cp bin br.edu.ifpb.myhome.Main
 ```
 
 (O diretório de trabalho deve ser a pasta raiz do projeto.)
@@ -95,7 +95,7 @@ java -cp bin src.br.edu.ifpb.myhome.Main
 
 1. Abra a pasta do projeto no editor.
 2. Aguarde o Maven carregar (`pom.xml`).
-3. Abra `src/br/edu/ifpb/myhome/Main.java` e use **Run** ou **Run and Debug** → **Run Main**.
+3. Abra `src/main/java/br/edu/ifpb/myhome/Main.java` e use **Run** ou **Run and Debug** → **Run Main**.
 
 **Dados iniciais (E1):** Se existirem `dados/usuarios.csv` e `dados/anuncios.csv` na pasta raiz, eles são carregados automaticamente ao iniciar.
 
@@ -156,7 +156,8 @@ Dentro da opção 4 (anúncios), o usuário pode: **1** Buscar imóveis (por tip
 
 ## Estrutura do projeto
 
-- `src/br/edu/ifpb/myhome/` — código fonte
+- `src/main/java/br/edu/ifpb/myhome/` — código fonte (padrão Maven)
+- `src/main/resources/` — recursos (ex.: config.properties)
 - `dados/` — `usuarios.csv`, `anuncios.csv` (E1)
 - `config.properties` — configuração (RF07)
 - `pom.xml` — projeto Maven

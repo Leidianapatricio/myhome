@@ -5,13 +5,13 @@
       "type": "java",
       "name": "Run Main",
       "request": "launch",
-      "mainClass": "src.br.edu.ifpb.myhome.Main"
+      "mainClass": "br.edu.ifpb.myhome.Main"
     },
     {
       "type": "java",
       "name": "Debug Main",
       "request": "launch",
-      "mainClass": "src.br.edu.ifpb.myhome.Main"
+      "mainClass": "br.edu.ifpb.myhome.Main"
     }
   ]
 }

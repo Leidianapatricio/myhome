@@ -1,6 +1,7 @@
-# Compilação Java
+# Compilação Java / Maven
 bin/
 out/
+target/
 *.class
 
 # IDE
