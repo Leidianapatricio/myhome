@@ -4,5 +4,11 @@
 # apartamento: extras = quartos;area;andar;elevador(0 ou 1)
 # terreno: extras = area
 Casa com quintal;350000;casa;Rua A 100;1;1
+Casa ampla 3 quartos;420000;casa;Av Central 50;1;0
+Casa dois andares;580000;casa;Rua das Flores 200;2;1
 Apartamento 2 quartos;280000;apartamento;Av B 200;1;2;60;5;0
+Apartamento 3 quartos;320000;apartamento;Rua Nova 88;2;3;75;3;1
+Apartamento cobertura;450000;apartamento;Av Beira-Mar 100;3;4;120;10;1
 Terreno 300m²;150000;terreno;Rua C 300;2;300
+Terreno 500m²;220000;terreno;Estrada Velha km 5;3;500
+Terreno 200m²;95000;terreno;Rua do Comércio 10;4;200

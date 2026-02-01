@@ -34,6 +34,15 @@
           </includes>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.1.0</version>
+        <configuration>
+          <mainClass>src.br.edu.ifpb.myhome.Main</mainClass>
+          <arguments />
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 </project>

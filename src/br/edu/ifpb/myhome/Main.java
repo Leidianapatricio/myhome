@@ -22,6 +22,7 @@ import src.br.edu.ifpb.myhome.csv.CarregadorCSV;
 import src.br.edu.ifpb.myhome.chat.Conversa;
 import src.br.edu.ifpb.myhome.compra.Compra;
 import src.br.edu.ifpb.myhome.estado.ArquivadoState;
+import src.br.edu.ifpb.myhome.estado.AtivoState;
 import src.br.edu.ifpb.myhome.chat.Mensagem;
 import src.br.edu.ifpb.myhome.factory.ApartamentoFactory;
 import src.br.edu.ifpb.myhome.factory.CasaFactory;
@@ -73,6 +74,7 @@ public class Main {
                 for (Anuncio a : anuncios) {
                     a.adicionarObserver(notifObserver);
                     a.adicionarObserver(interessadosObserver);
+                    a.setEstado(new AtivoState());
                 }
                 saida.escrever("E1 - Carregados " + anuncios.size() + " anúncio(s) de dados/anuncios.csv");
             }
@@ -234,7 +236,7 @@ public class Main {
                         saida.escrever("1 - Buscar imóveis");
                         saida.escrever("2 - Visualizar anúncio");
                         saida.escrever("3 - Favoritar anúncio");
-                        saida.escrever("4 - Comprar imóvel (anúncio ativo)");
+                        saida.escrever("4 - Comprar imóvel");
                         saida.escreverSemQuebra("Opção: ");
                         int acao;
                         try {
@@ -276,13 +278,13 @@ public class Main {
                                 }
                                 if (numCompra >= 1 && numCompra <= resultado.size()) {
                                     Anuncio anuncioCompra = resultado.get(numCompra - 1);
-                                    if ("Ativo".equals(anuncioCompra.getEstadoAtual())) {
+                                    if (!"Arquivado".equals(anuncioCompra.getEstadoAtual())) {
                                         Compra compra = new Compra(usuario, anuncioCompra);
                                         compras.add(compra);
                                         anuncioCompra.setEstado(new ArquivadoState());
                                         saida.escrever("Compra realizada. Anúncio \"" + anuncioCompra.getTitulo() + "\" arquivado.");
                                     } else {
-                                        saida.escrever("Este anúncio não está ativo para compra.");
+                                        saida.escrever("Este anúncio já foi vendido.");
                                     }
                                 }
                             }
@@ -336,6 +338,33 @@ public class Main {
                                     saida.escrever("Anúncio inválido.");
                                 }
                             }
+                        } else if (acao == 4) {
+                            List<Anuncio> disponiveis = new ArrayList<>();
+                            for (Anuncio a : anuncios) {
+                                if (!"Arquivado".equals(a.getEstadoAtual())) disponiveis.add(a);
+                            }
+                            if (disponiveis.isEmpty()) {
+                                saida.escrever("Nenhum anúncio disponível para compra.");
+                            } else {
+                                saida.escrever("\n--- Comprar imóvel ---");
+                                saida.escrever("Comprador: " + usuario.getNome());
+                                for (int i = 0; i < disponiveis.size(); i++) {
+                                    Anuncio a = disponiveis.get(i);
+                                    saida.escrever((i + 1) + ") " + a.getTitulo() + " | " + FormatadorMoeda.formatarReal(a.getPreco()));
+                                }
+                                saida.escreverSemQuebra("Número do anúncio para comprar (1-" + disponiveis.size() + "): ");
+                                int ia;
+                                try { ia = Integer.parseInt(sc.nextLine().trim()); } catch (NumberFormatException e) { ia = 0; }
+                                if (ia >= 1 && ia <= disponiveis.size()) {
+                                    Anuncio anuncio = disponiveis.get(ia - 1);
+                                    Compra compra = new Compra(usuario, anuncio);
+                                    compras.add(compra);
+                                    anuncio.setEstado(new ArquivadoState());
+                                    saida.escrever("Compra realizada. Anúncio \"" + anuncio.getTitulo() + "\" arquivado.");
+                                } else {
+                                    saida.escrever("Anúncio inválido.");
+                                }
+                            }
                         } else {
                             saida.escrever("Opção inválida.");
                         }
@@ -347,7 +376,7 @@ public class Main {
                 if (usuarios.isEmpty() || anuncios.isEmpty()) {
                     saida.escrever("Cadastre usuários e anúncios primeiro.");
                 } else {
-                    saida.escrever("\n--- Chat (estilo OLX) ---");
+                    saida.escrever("\n--- Chat ---");
                     saida.escrever("1 - Interessado: conversar sobre um anúncio");
                     saida.escrever("2 - Dono do anúncio: ver e responder conversas");
                     saida.escreverSemQuebra("Opção: ");

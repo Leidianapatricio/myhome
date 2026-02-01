@@ -5,7 +5,6 @@ import src.br.edu.ifpb.myhome.estado.RascunhoState;
 import src.br.edu.ifpb.myhome.imovel.Imovel;
 import src.br.edu.ifpb.myhome.notificacao.Observer;
 import src.br.edu.ifpb.myhome.usuario.Usuario;
-import src.br.edu.ifpb.myhome.visitor.Visitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,10 +39,6 @@ public class Anuncio {
 
     public void mudarEstado(EstadoAnuncio e) {
         this.estado = e;
-    }
-
-    public void aceitar(Visitor v) {
-        v.visitar(this);
     }
 
     public void adicionarObserver(Observer o) {

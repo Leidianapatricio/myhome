@@ -1,7 +1,5 @@
 package src.br.edu.ifpb.myhome.imovel;
 
-import src.br.edu.ifpb.myhome.visitor.Visitor;
-
 public abstract class Imovel {
 
     private String endereco;
@@ -13,10 +11,6 @@ public abstract class Imovel {
     }
 
     public abstract double calcularValor();
-
-    public void aceitar(Visitor v) {
-        v.visitar(this);
-    }
 
     public String getEndereco() {
         return endereco;

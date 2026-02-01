@@ -18,62 +18,92 @@ Sistema de anúncios de imóveis em Java, desenvolvido como trabalho da discipli
 ## Requisitos
 
 - **JDK 11 ou superior** (não apenas JRE) — necessário para compilar e executar.
+- **Maven** (opcional, mas recomendado) — para compilar e rodar com um comando.
 
-### Instalar o JDK (Ubuntu/Debian)
+### Instalar o JDK
 
+**Windows:**  
+1. Baixe o JDK em [Adoptium](https://adoptium.net/) (recomendado) ou [Oracle JDK](https://www.oracle.com/java/technologies/downloads/) — escolha o instalador **.msi** para Windows.  
+2. Instale marcando a opção de **adicionar Java ao PATH** (se existir).  
+3. Para rodar o projeto: dê **duplo clique em `run.bat`** (na pasta do projeto) ou abra o **CMD** nessa pasta e digite `run.bat`.  
+   - O `run.bat` funciona **com ou sem Maven**: se o Maven estiver instalado, ele usa; senão, compila e executa só com o JDK.
+
+**macOS:**
+```bash
+brew install openjdk@11
+```
+
+**Linux (Ubuntu/Debian):**
 ```bash
 sudo apt update
 sudo apt install default-jdk
 ```
 
-Ou uma versão específica (ex.: OpenJDK 17):
-
-```bash
-sudo apt install openjdk-17-jdk
-```
-
-### Verificar instalação
-
+**Verificar instalação (qualquer sistema):**
 ```bash
 javac -version
 java -version
 ```
 
+### Instalar o Maven (recomendado)
+
+**Windows:** Baixe em [maven.apache.org](https://maven.apache.org/download.cgi), extraia e adicione o `bin` ao PATH.
+
+**macOS:** `brew install maven`  
+
+**Linux:** `sudo apt install maven`
+
 ---
 
-## Como colocar em funcionamento
+## Como rodar em qualquer computador
 
-### No VSCode / Cursor
+**Importante:** O programa deve rodar **na pasta raiz do projeto** (onde estão `pom.xml`, `run.bat`, `dados/` e `config.properties`). O `run.bat` já entra nessa pasta automaticamente.
+
+### Rodar no Windows
+
+1. Instale o **JDK 11+** (Adoptium ou Oracle — instalador .msi).  
+2. Copie ou clone a pasta do projeto para o computador.  
+3. Entre na pasta do projeto e dê **duplo clique em `run.bat`**.  
+   - Se o Maven estiver instalado, o script usa Maven; senão, compila e executa só com o JDK.  
+   - A janela do CMD abre, o programa roda e, ao encerrar, mostra "Pressione qualquer tecla...".
+
+Se preferir usar o terminal: abra o **CMD**, vá até a pasta do projeto (`cd caminho\para\myhome`) e digite `run.bat` ou `mvn compile exec:java`.
+
+### Opção 1 – Com Maven (recomendado)
+
+Na pasta raiz do projeto:
+
+```bash
+mvn compile exec:java
+```
+
+Ou use o script:  
+- **Windows:** duplo clique em `run.bat` ou, no CMD na pasta do projeto, digite `run.bat`. Funciona com ou sem Maven (se não tiver Maven, usa só o JDK).  
+- **Linux/Mac:** no terminal na pasta do projeto, `chmod +x run.sh` (só na primeira vez) e depois `./run.sh`.
+
+### Opção 2 – Sem Maven (só JDK)
+
+Se não tiver Maven, compile todos os `.java` dentro de `src/` com `javac` (saída em `bin/`) e execute:
+
+```bash
+java -cp bin src.br.edu.ifpb.myhome.Main
+```
+
+(O diretório de trabalho deve ser a pasta raiz do projeto.)
+
+### Opção 3 – VSCode / Cursor
 
 1. Abra a pasta do projeto no editor.
-2. Aguarde o Maven carregar o projeto (`pom.xml`).
-3. Abra `src/br/edu/ifpb/myhome/Main.java` e use **Run** acima do método `main`, ou **Run and Debug** → **Run Main**.
+2. Aguarde o Maven carregar (`pom.xml`).
+3. Abra `src/br/edu/ifpb/myhome/Main.java` e use **Run** ou **Run and Debug** → **Run Main**.
 
-### No terminal (após instalar o JDK)
-
-A partir da raiz do projeto:
-
-```bash
-# Com Maven (recomendado)
-mvn compile exec:java -Dexec.mainClass="src.br.edu.ifpb.myhome.Main"
-
-# Ou apenas compilar
-mvn compile
-```
-
-Para executar a classe principal após compilar com Maven:
-
-```bash
-mvn exec:java -Dexec.mainClass="src.br.edu.ifpb.myhome.Main"
-```
-
-**E1 – Dados iniciais via CSV:** Na primeira execução, se existirem os arquivos `dados/usuarios.csv` e `dados/anuncios.csv`, usuários e anúncios serão carregados automaticamente. O formato está documentado em comentários no `CarregadorCSV` e nos próprios CSVs.
+**Dados iniciais (E1):** Se existirem `dados/usuarios.csv` e `dados/anuncios.csv` na pasta raiz, eles são carregados automaticamente ao iniciar.
 
 ---
 
 ## Descrição da solução
 
-O **MyHome** simula um sistema de anúncios de imóveis (estilo OLX): usuários podem cadastrar-se, criar anúncios (Casa, Apartamento, Terreno etc.), buscar e visualizar anúncios, favoritar, conversar por chat sobre um anúncio e realizar “compra” (o anúncio passa a estado Arquivado). Há moderação de anúncios (estados Rascunho → Moderação → Ativo), notificação por e-mail/SMS (Observer + Adapter), log de mudanças de estado e configuração centralizada em `config.properties`.
+O **MyHome** simula um sistema de anúncios de imóveis: usuários podem cadastrar-se, criar anúncios (Casa, Apartamento, Terreno etc.), buscar e visualizar anúncios, favoritar, conversar por chat sobre um anúncio e realizar “compra” (o anúncio passa a estado Arquivado). Há moderação de anúncios (estados Rascunho → Moderação → Ativo), notificação por e-mail/SMS (Observer + Adapter), log de mudanças de estado e configuração centralizada em `config.properties`.
 
 ---
 
@@ -102,13 +132,10 @@ O **MyHome** simula um sistema de anúncios de imóveis (estilo OLX): usuários 
 - **Chain of Responsibility:** `ValidadorAnuncio`, `ValidadorTitulo`, `ValidadorPreco`, `ValidadorImovel`
 - **Observer:** `Observer`, `NotificacaoObserver`, `NotificacaoInteressadosObserver`; `Anuncio` mantém lista e chama `notificar()` em `setEstado()`
 - **Adapter:** `ServicoNotificacaoExterno`, `EmailAdapter`, `SmsAdapter`
-- **Visitor:** `Visitor`; `Anuncio` e `Imovel` com `aceitar(Visitor)`
 - **Mediator:** `ChatMediator`, `Conversa`; `Usuario` como colleague
 - **State:** `EstadoAnuncio`, `RascunhoState`, `ModeracaoState`, `AtivoState`, `VendidoState`, `SuspensoState`, `ArquivadoState`
 - **Composição:** `InteressadosAnuncio` (lista de interessados do anúncio)
 - **E2 (abstração de saída):** `Saida`, `ConsoleSaida`
-
-Detalhes adicionais estão em `IMPLEMENTACAO.md`.
 
 ---
 
@@ -123,15 +150,14 @@ Detalhes adicionais estão em `IMPLEMENTACAO.md`.
 7. Consultar log de mudanças de estado  
 0. Sair  
 
-Dentro da opção 4 (anúncios), o usuário pode: **1** Buscar imóveis (por tipo), **2** Visualizar anúncio, **3** Favoritar anúncio, **4** Comprar imóvel (escolhe um anúncio ativo para comprar).  
+Dentro da opção 4 (anúncios), o usuário pode: **1** Buscar imóveis (por tipo), **2** Visualizar anúncio, **3** Favoritar anúncio, **4** Comprar imóvel (escolhe um anúncio disponível para comprar).  
 
 ---
 
 ## Estrutura do projeto
 
-- `src/br/edu/ifpb/myhome/` — código fonte (Main, anuncio, busca, chat, compra, config, csv, estado, factory, imovel, notificacao, saida, usuario, validacao, visitor, prototype)
+- `src/br/edu/ifpb/myhome/` — código fonte
 - `dados/` — `usuarios.csv`, `anuncios.csv` (E1)
 - `config.properties` — configuração (RF07)
 - `pom.xml` — projeto Maven
-
-Pasta ou repositório do projeto devem estar disponíveis conforme orientação do professor para entrega e reprodução no ambiente de avaliação.
+- `run.sh` / `run.bat` — scripts para rodar em qualquer computador (a partir da pasta raiz do projeto)
