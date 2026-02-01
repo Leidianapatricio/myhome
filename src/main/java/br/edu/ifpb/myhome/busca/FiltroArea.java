@@ -1,9 +1,11 @@
 package br.edu.ifpb.myhome.busca;
 
 import br.edu.ifpb.myhome.anuncio.Anuncio;
-import br.edu.ifpb.myhome.imovel.Apartamento;
-import br.edu.ifpb.myhome.imovel.Terreno;
 
+/**
+ * RF06 - Filtro por faixa de área (m²). Usa área do imóvel para todos os tipos
+ * (casa, apartamento, terreno).
+ */
 public class FiltroArea implements FiltroBusca {
 
     private final double areaMin;
@@ -17,14 +19,7 @@ public class FiltroArea implements FiltroBusca {
     @Override
     public boolean aceita(Anuncio anuncio) {
         if (anuncio == null || anuncio.getImovel() == null) return false;
-        double area = 0;
-        if (anuncio.getImovel() instanceof Terreno) {
-            area = ((Terreno) anuncio.getImovel()).getArea();
-        } else if (anuncio.getImovel() instanceof Apartamento) {
-            area = ((Apartamento) anuncio.getImovel()).getArea();
-        } else {
-            return true;
-        }
+        double area = anuncio.getImovel().getAreaMetrosQuadrados();
         return area >= areaMin && area <= areaMax;
     }
 }

@@ -12,21 +12,29 @@ import java.util.List;
 public class Anuncio {
 
     private String titulo;
+    /** Valor principal (venda). Mantido para compatibilidade; ver getValorVenda/getValorAluguel/getValorTemporada. */
     private double preco;
     private Imovel imovel;
     private EstadoAnuncio estado;
+    private TipoOferta tipoOferta;
+    private double valorVenda;
+    private double valorAluguel;
+    private double valorTemporada;
     private List<Observer> observers = new ArrayList<>();
     private final InteressadosAnuncio interessados = new InteressadosAnuncio();
 
     public Anuncio() {
         this.estado = new RascunhoState();
+        this.tipoOferta = TipoOferta.VENDA;
     }
 
     public Anuncio(String titulo, double preco, Imovel imovel) {
         this.titulo = titulo;
         this.preco = preco;
+        this.valorVenda = preco;
         this.imovel = imovel;
         this.estado = new RascunhoState();
+        this.tipoOferta = TipoOferta.VENDA;
     }
 
     public boolean submeter() {
@@ -79,13 +87,24 @@ public class Anuncio {
         this.titulo = titulo;
     }
 
+    /** Retorna o preço principal (valor de venda, para compatibilidade). */
     public double getPreco() {
         return preco;
     }
 
     public void setPreco(double preco) {
         this.preco = preco;
+        this.valorVenda = preco;
     }
+
+    public TipoOferta getTipoOferta() { return tipoOferta; }
+    public void setTipoOferta(TipoOferta tipoOferta) { this.tipoOferta = tipoOferta != null ? tipoOferta : TipoOferta.VENDA; }
+    public double getValorVenda() { return valorVenda; }
+    public void setValorVenda(double valorVenda) { this.valorVenda = valorVenda; this.preco = valorVenda; }
+    public double getValorAluguel() { return valorAluguel; }
+    public void setValorAluguel(double valorAluguel) { this.valorAluguel = valorAluguel; }
+    public double getValorTemporada() { return valorTemporada; }
+    public void setValorTemporada(double valorTemporada) { this.valorTemporada = valorTemporada; }
 
     public Imovel getImovel() {
         return imovel;

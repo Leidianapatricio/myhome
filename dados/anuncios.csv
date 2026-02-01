@@ -1,14 +1,16 @@
-# titulo;preco;tipo;endereco;idDono;extras...
-# tipo = casa, apartamento, terreno. idDono = índice 1-based do usuário em usuarios.csv
+# titulo;preco;tipo;endereco;idDono;tipoOferta;valorVenda;valorAluguel;valorTemporada;area;descricao;suites;bairro;extras...
+# tipoOferta = venda, aluguel, temporada
+# area = área em m². descricao = detalhes (evitar ;). suites = quantidade de suítes. bairro = bairro do imóvel
+# Bairros de exemplo: Jaguaribe, Castelo Branco, Bancários, Bessa, Tambaú, Altiplano
 # casa: extras = quintal (0 ou 1)
-# apartamento: extras = quartos;area;andar;elevador(0 ou 1)
-# terreno: extras = area
-Casa com quintal;350000;casa;Rua A 100;1;1
-Casa ampla 3 quartos;420000;casa;Av Central 50;1;0
-Casa dois andares;580000;casa;Rua das Flores 200;2;1
-Apartamento 2 quartos;280000;apartamento;Av B 200;1;2;60;5;0
-Apartamento 3 quartos;320000;apartamento;Rua Nova 88;2;3;75;3;1
-Apartamento cobertura;450000;apartamento;Av Beira-Mar 100;3;4;120;10;1
-Terreno 300m²;150000;terreno;Rua C 300;2;300
-Terreno 500m²;220000;terreno;Estrada Velha km 5;3;500
-Terreno 200m²;95000;terreno;Rua do Comércio 10;4;200
+# apartamento: extras = quartos;andar;elevador(0 ou 1)
+# terreno: sem extras após bairro
+Casa com quintal;350000;casa;Rua A 100;1;venda;350000;2500;350;120;Casa ampla com jardim e quintal;2;Jaguaribe;1
+Casa ampla 3 quartos;420000;casa;Av Central 50;1;venda;420000;3200;420;150;Casa com 3 quartos e garagem;2;Castelo Branco;0
+Casa dois andares;580000;casa;Rua das Flores 200;2;venda;580000;4500;580;200;Casa de dois andares com churrasqueira;3;Bancários;1
+Apartamento 2 quartos;280000;apartamento;Av B 200;1;venda;280000;1800;280;60;Apartamento reformado 2 quartos;1;Bessa;2;5;0
+Apartamento 3 quartos;320000;apartamento;Rua Nova 88;2;venda;320000;2200;320;75;Apto 3 quartos com varanda;2;Tambaú;3;3;1
+Apartamento cobertura;450000;apartamento;Av Beira-Mar 100;3;venda;450000;3500;450;120;Cobertura com vista para o mar;3;Altiplano;4;10;1
+Terreno 300m²;150000;terreno;Rua C 300;2;venda;150000;0;0;300;Terreno plano para construção;0;Jaguaribe;
+Terreno 500m²;220000;terreno;Estrada Velha km 5;3;venda;220000;0;0;500;Terreno em condomínio fechado;0;Castelo Branco;
+Terreno 200m²;95000;terreno;Rua do Comércio 10;4;venda;95000;0;0;200;Terreno comercial;0;Bancários;

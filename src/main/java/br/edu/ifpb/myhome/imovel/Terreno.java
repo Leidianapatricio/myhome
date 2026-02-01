@@ -2,23 +2,16 @@ package br.edu.ifpb.myhome.imovel;
 
 public class Terreno extends Imovel {
 
-    private double area;
-
     public Terreno(String endereco, double preco, double area) {
         super(endereco, preco);
-        this.area = area;
+        setAreaMetrosQuadrados(area);
     }
 
     @Override
     public double calcularValor() {
-        return getPreco() * area;
+        return getPreco() * getAreaMetrosQuadrados();
     }
 
-    public double getArea() {
-        return area;
-    }
-
-    public void setArea(double area) {
-        this.area = area;
-    }
+    public double getArea() { return getAreaMetrosQuadrados(); }
+    public void setArea(double area) { setAreaMetrosQuadrados(area); }
 }
