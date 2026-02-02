@@ -17,13 +17,44 @@ package "anuncio" {
     - valorAluguel: double
     - valorTemporada: double
     - quantidadeFotos: int
+    - dono: Usuario
     - observers: List<Observer>
     - interessados: InteressadosAnuncio
+    + Anuncio()
+    + Anuncio(titulo: String, preco: double, imovel: Imovel)
     + submeter(): boolean
-    + setEstado(EstadoAnuncio): void
-    + adicionarObserver(Observer): void
-    + notificar(): void
+    + submeterParaPublicacao(): ResultadoModeracao
+    + aplicarResultadoModeracao(aprovado: boolean): void
+    + confirmarPagamento(): void
+    + ativar(): void
+    + mudarEstado(e: EstadoAnuncio): void
+    + adicionarObserver(o: Observer): void
+    + removerObserver(o: Observer): void
+    + notificar(evento: TipoEvento): void
+    + setEstado(estado: EstadoAnuncio): void
+    + adicionarInteressado(u: Usuario): void
+    + getInteressados(): List<Usuario>
+    + getDono(): Usuario
+    + setDono(dono: Usuario): void
+    + getTitulo(): String
+    + setTitulo(titulo: String): void
+    + getPreco(): double
+    + setPreco(preco: double): void
+    + getTipoOferta(): TipoOferta
+    + setTipoOferta(tipoOferta: TipoOferta): void
+    + getValorVenda(): double
+    + setValorVenda(valorVenda: double): void
+    + getValorAluguel(): double
+    + setValorAluguel(valorAluguel: double): void
+    + getValorTemporada(): double
+    + setValorTemporada(valorTemporada: double): void
+    + getImovel(): Imovel
+    + setImovel(imovel: Imovel): void
+    + getEstado(): EstadoAnuncio
     + getEstadoAtual(): String
+    + getTipoImovel(): String
+    + getQuantidadeFotos(): int
+    + setQuantidadeFotos(quantidadeFotos: int): void
   }
   enum TipoOferta {
     VENDA
@@ -32,20 +63,27 @@ package "anuncio" {
   }
   class InteressadosAnuncio {
     - interessados: List<Usuario>
-    + adicionar(Usuario): void
+    + adicionar(u: Usuario): void
     + getInteressados(): List<Usuario>
   }
   class LogMudancaEstado <<Singleton>> {
     - entradas: List<EntradaLogEstado>
     - {static} instancia: LogMudancaEstado
     + {static} getInstancia(): LogMudancaEstado
-    + registrar(Anuncio, EstadoAnuncio, EstadoAnuncio): void
+    + registrar(anuncio: Anuncio, estadoAnterior: EstadoAnuncio, estadoNovo: EstadoAnuncio): void
+    + getEntradas(): List<EntradaLogEstado>
   }
   class EntradaLogEstado {
     - tituloAnuncio: String
     - estadoAnterior: String
     - estadoNovo: String
     - dataHora: LocalDateTime
+    + EntradaLogEstado(tituloAnuncio: String, estadoAnterior: String, estadoNovo: String)
+    + getTituloAnuncio(): String
+    + getEstadoAnterior(): String
+    + getEstadoNovo(): String
+    + getDataHora(): LocalDateTime
+    + toString(): String
   }
   LogMudancaEstado *-- EntradaLogEstado
   Anuncio "1" *-- "1" InteressadosAnuncio
@@ -55,14 +93,39 @@ package "anuncio" {
 ' ==================== ESTADO (State) ====================
 package "estado" {
   interface EstadoAnuncio {
-    + proximo(Anuncio): void
+    + proximo(anuncio: Anuncio): void
+    + getNome(): String
+    + aplicarResultadoModeracao(anuncio: Anuncio, aprovado: boolean): void
+    + confirmarPagamento(anuncio: Anuncio): void
+    + ativar(anuncio: Anuncio): void
+  }
+  class RascunhoState {
+    + proximo(anuncio: Anuncio): void
+    + ativar(anuncio: Anuncio): void
     + getNome(): String
   }
-  class RascunhoState
-  class ModeracaoState
-  class AtivoState
-  class SuspensoState
-  class ArquivadoState
+  class ModeracaoState {
+    + proximo(anuncio: Anuncio): void
+    + aplicarResultadoModeracao(anuncio: Anuncio, aprovado: boolean): void
+    + getNome(): String
+  }
+  class AtivoState {
+    + proximo(anuncio: Anuncio): void
+    + confirmarPagamento(anuncio: Anuncio): void
+    + getNome(): String
+  }
+  class SuspensoState {
+    + proximo(anuncio: Anuncio): void
+    + getNome(): String
+  }
+  class ArquivadoState {
+    - {static} MSG_FINAL: String
+    + proximo(anuncio: Anuncio): void
+    + aplicarResultadoModeracao(anuncio: Anuncio, aprovado: boolean): void
+    + confirmarPagamento(anuncio: Anuncio): void
+    + ativar(anuncio: Anuncio): void
+    + getNome(): String
+  }
   EstadoAnuncio <|.. RascunhoState
   EstadoAnuncio <|.. ModeracaoState
   EstadoAnuncio <|.. AtivoState
@@ -81,23 +144,60 @@ package "imovel" {
     - areaMetrosQuadrados: double
     - descricao: String
     - quantidadeSuites: int
+    + Imovel(endereco: String, preco: double)
     + {abstract} calcularValor(): double
+    + getEndereco(): String
+    + getBairro(): String
+    + getPreco(): double
+    + getAreaMetrosQuadrados(): double
+    + getDescricao(): String
+    + getQuantidadeSuites(): int
+    + setEndereco(endereco: String): void
+    + setBairro(bairro: String): void
+    + setPreco(preco: double): void
+    + setAreaMetrosQuadrados(areaMetrosQuadrados: double): void
+    + setDescricao(descricao: String): void
+    + setQuantidadeSuites(quantidadeSuites: int): void
   }
   class Casa {
     - possuiQuintal: boolean
+    + Casa(endereco: String, preco: double, possuiQuintal: boolean)
     + clone(): Imovel
+    + calcularValor(): double
+    + isPossuiQuintal(): boolean
+    + setPossuiQuintal(possuiQuintal: boolean): void
   }
   class Apartamento {
     - quartos: int
     - andar: int
     - possuiElevador: boolean
+    + Apartamento(endereco: String, preco: double, quartos: int, area: double, andar: int, possuiElevador: boolean)
     + clone(): Imovel
+    + calcularValor(): double
+    + getQuartos(): int
+    + getArea(): double
+    + getAndar(): int
+    + isPossuiElevador(): boolean
+    + setQuartos(quartos: int): void
+    + setArea(area: double): void
+    + setAndar(andar: int): void
+    + setPossuiElevador(possuiElevador: boolean): void
   }
   class Terreno {
+    + Terreno(endereco: String, preco: double, area: double)
     + clone(): Imovel
+    + calcularValor(): double
+    + getArea(): double
+    + setArea(area: double): void
   }
-  class SalaComercial
-  class Galpao
+  class SalaComercial {
+    + SalaComercial(endereco: String, preco: double)
+    + calcularValor(): double
+  }
+  class Galpao {
+    + Galpao(endereco: String, preco: double)
+    + calcularValor(): double
+  }
   Imovel <|-- Casa
   Imovel <|-- Apartamento
   Imovel <|-- Terreno
@@ -113,8 +213,8 @@ package "prototype" {
   }
   class ImovelPrototypeRegistry {
     - prototipos: Map<String, ImovelPrototype>
-    + registrar(String, ImovelPrototype): void
-    + clonarPrototipo(String): Imovel
+    + registrar(tipo: String, prototipo: ImovelPrototype): void
+    + clonarPrototipo(tipo: String): Imovel
     + {static} criarRegistroPadrao(): ImovelPrototypeRegistry
   }
   ImovelPrototype ..> Imovel : clone
@@ -129,11 +229,21 @@ package "factory" {
   abstract class ImovelFactory {
     + {abstract} criarImovel(): Imovel
   }
-  class CasaFactory
-  class ApartamentoFactory
-  class TerrenoFactory
-  class SalaComercialFactory
-  class GalpaoFactory
+  class CasaFactory {
+    + criarImovel(): Imovel
+  }
+  class ApartamentoFactory {
+    + criarImovel(): Imovel
+  }
+  class TerrenoFactory {
+    + criarImovel(): Imovel
+  }
+  class SalaComercialFactory {
+    + criarImovel(): Imovel
+  }
+  class GalpaoFactory {
+    + criarImovel(): Imovel
+  }
   ImovelFactory <|-- CasaFactory
   ImovelFactory <|-- ApartamentoFactory
   ImovelFactory <|-- TerrenoFactory
@@ -145,16 +255,42 @@ package "factory" {
 ' ==================== BUSCA ====================
 package "busca" {
   interface FiltroBusca {
-    + aceita(Anuncio): boolean
+    + aceita(anuncio: Anuncio): boolean
   }
-  class FiltroTipoImovel
-  class FiltroBairro
-  class FiltroPreco
-  class FiltroArea
-  class FiltroQuartos
-  class FiltroTitulo
+  class FiltroTipoImovel {
+    - tipo: String
+    + FiltroTipoImovel(tipo: String)
+    + aceita(anuncio: Anuncio): boolean
+  }
+  class FiltroBairro {
+    - bairro: String
+    + FiltroBairro(bairro: String)
+    + aceita(anuncio: Anuncio): boolean
+  }
+  class FiltroPreco {
+    - precoMin: double
+    - precoMax: double
+    + FiltroPreco(precoMin: double, precoMax: double)
+    + aceita(anuncio: Anuncio): boolean
+  }
+  class FiltroArea {
+    - areaMin: double
+    - areaMax: double
+    + FiltroArea(areaMin: double, areaMax: double)
+    + aceita(anuncio: Anuncio): boolean
+  }
+  class FiltroQuartos {
+    - quartosMin: int
+    + FiltroQuartos(quartosMinimos: int)
+    + aceita(anuncio: Anuncio): boolean
+  }
+  class FiltroTitulo {
+    - trecho: String
+    + FiltroTitulo(trecho: String)
+    + aceita(anuncio: Anuncio): boolean
+  }
   class BuscaService {
-    + {static} buscar(List<Anuncio>, List<FiltroBusca>): List<Anuncio>
+    + {static} buscar(anuncios: List<Anuncio>, filtros: List<FiltroBusca>): List<Anuncio>
   }
   FiltroBusca <|.. FiltroTipoImovel
   FiltroBusca <|.. FiltroBairro
@@ -168,17 +304,36 @@ package "busca" {
 
 ' ==================== VALIDAÇÃO (Chain of Responsibility) ====================
 package "validacao" {
+  class ResultadoValidacao {
+    - valido: boolean
+    - erros: List<String>
+    + ResultadoValidacao(valido: boolean, erros: List<String>)
+    + {static} ok(): ResultadoValidacao
+    + {static} erro(mensagem: String): ResultadoValidacao
+    + isValido(): boolean
+    + getErros(): List<String>
+  }
   abstract class ValidadorAnuncio {
     - proximo: ValidadorAnuncio
-    + setProximo(ValidadorAnuncio): void
-    # passarParaProximo(Anuncio): boolean
-    + {abstract} validar(Anuncio): boolean
+    + setProximo(v: ValidadorAnuncio): void
+    # passarParaProximo(a: Anuncio): ResultadoValidacao
+    + {abstract} validar(a: Anuncio): ResultadoValidacao
   }
-  class ValidadorPreco
-  class ValidadorTitulo
-  class ValidadorImovel
+  class ValidadorPreco {
+    + validar(anuncio: Anuncio): ResultadoValidacao
+  }
+  class ValidadorTitulo {
+    + validar(anuncio: Anuncio): ResultadoValidacao
+  }
+  class ValidadorImovel {
+    + validar(a: Anuncio): ResultadoValidacao
+  }
   class ValidadorUsuario {
-    + validar(String nome, String email): List<String>
+    + validar(nome: String, email: String): List<String>
+  }
+  class ValidadorChainFactory {
+    - ValidadorChainFactory()
+    + {static} criarCadeiaPadrao(): ValidadorAnuncio
   }
   ValidadorAnuncio <|-- ValidadorPreco
   ValidadorAnuncio <|-- ValidadorTitulo
@@ -189,12 +344,23 @@ package "validacao" {
 ' ==================== USUÁRIO ====================
 package "usuario" {
   class Usuario {
+    - {static} contadorId: long
     - id: Long
     - nome: String
     - email: String
+    + Usuario(nome: String, email: String)
+    + Usuario(id: Long, nome: String, email: String)
+    + autenticar(): boolean
+    + enviarMensagemVia(mediator: ChatMediator, texto: String): void
+    + criarAnuncio(): Anuncio
+    + editarAnuncio(a: Anuncio): void
+    + removerAnuncio(a: Anuncio): void
+    + buscarImoveis(): void
+    + visualizarAnuncio(a: Anuncio): void
+    + favoritarAnuncio(a: Anuncio): void
+    + getId(): Long
     + getNome(): String
     + getEmail(): String
-    + enviarMensagemVia(ChatMediator, String): void
   }
 }
 Anuncio ..> Usuario : dono
@@ -203,23 +369,38 @@ InteressadosAnuncio --> Usuario : lista
 ' ==================== CHAT (Mediator) ====================
 package "chat" {
   interface ChatMediator {
-    + enviarMensagem(Usuario, String): void
+    + enviarMensagem(remetente: Usuario, texto: String): void
     + getMensagens(): List<Mensagem>
   }
-  class Conversa {
+  class Conversa implements ChatMediator {
+    - {static} contadorId: long
     - id: Long
     - anuncio: Anuncio
     - interessado: Usuario
     - donoAnuncio: Usuario
     - mensagens: List<Mensagem>
-    + enviarMensagem(Usuario, String): void
-    + ehMesma(Anuncio, Usuario, Usuario): boolean
+    + Conversa(anuncio: Anuncio, interessado: Usuario, donoAnuncio: Usuario)
+    + getId(): Long
+    + getAnuncio(): Anuncio
+    + getInteressado(): Usuario
+    + getDonoAnuncio(): Usuario
+    + getMensagens(): List<Mensagem>
+    + enviarMensagem(remetente: Usuario, texto: String): void
+    + ehMesma(a: Anuncio, inter: Usuario, dono: Usuario): boolean
   }
   class Mensagem {
+    - {static} contadorId: long
     - id: Long
     - texto: String
     - remetente: Usuario
     - dataHora: LocalDateTime
+    + Mensagem(texto: String, remetente: Usuario)
+    + getId(): Long
+    + getTexto(): String
+    + getRemetente(): Usuario
+    + getDataHora(): LocalDateTime
+    + getDataHoraFormatada(): String
+    + toString(): String
   }
   ChatMediator <|.. Conversa
   Conversa *-- Mensagem
@@ -235,12 +416,21 @@ package "compra" {
     - comprador: Usuario
     - anuncio: Anuncio
     - data: LocalDateTime
+    + Compra(comprador: Usuario, anuncio: Anuncio)
+    + getComprador(): Usuario
+    + getAnuncio(): Anuncio
+    + getData(): LocalDateTime
   }
   class SolicitacaoCompra {
     - comprador: Usuario
     - anuncio: Anuncio
     - formaPagamentoNome: String
     - data: LocalDateTime
+    + SolicitacaoCompra(comprador: Usuario, anuncio: Anuncio, formaPagamento: FormaPagamento)
+    + getComprador(): Usuario
+    + getAnuncio(): Anuncio
+    + getFormaPagamentoNome(): String
+    + getData(): LocalDateTime
   }
   Compra --> Usuario
   Compra --> Anuncio
@@ -252,63 +442,133 @@ package "compra" {
 package "pagamento" {
   interface FormaPagamento {
     + getNome(): String
+    + processar(valor: double): String
   }
-  class PagamentoCartao
-  class PagamentoPix
-  class PagamentoBoleto
-  class ServicoPagamento
-  enum PlanoAssinatura
+  class PagamentoCartao implements FormaPagamento {
+    + getNome(): String
+    + processar(valor: double): String
+  }
+  class PagamentoPix implements FormaPagamento {
+    + getNome(): String
+    + processar(valor: double): String
+  }
+  class PagamentoBoleto implements FormaPagamento {
+    + getNome(): String
+    + processar(valor: double): String
+  }
+  class ServicoPagamento {
+    + processarPagamento(valor: double, forma: FormaPagamento): String
+  }
+  enum PlanoAssinatura {
+    BASICO
+    PREMIUM
+  }
   FormaPagamento <|.. PagamentoCartao
   FormaPagamento <|.. PagamentoPix
   FormaPagamento <|.. PagamentoBoleto
   SolicitacaoCompra ..> FormaPagamento : usa
+  ServicoPagamento ..> FormaPagamento : usa
 }
 
 ' ==================== NOTIFICAÇÃO (Observer + Adapter) ====================
 package "notificacao" {
+  class NotificacaoException extends Exception {
+    + NotificacaoException(mensagem: String)
+    + NotificacaoException(mensagem: String, causa: Throwable)
+  }
+  interface NotificacaoFalhaHandler {
+    + onFalha(a: Anuncio, evento: TipoEvento, e: Exception): void
+  }
   interface Observer {
-    + atualizar(Anuncio): void
+    + atualizar(a: Anuncio, evento: TipoEvento): void
   }
   interface ServicoNotificacaoExterno {
-    + enviar(String, String): void
+    + enviarMensagem(a: Anuncio, tipo: TipoEvento): void throws NotificacaoException
   }
-  class NotificacaoObserver
-  class NotificacaoInteressadosObserver
-  class EmailAdapter
-  class SmsAdapter
-  class EmailApi
-  class Notificacao
+  class NotificacaoObserver implements Observer {
+    - servico: ServicoNotificacaoExterno
+    - falhaHandler: NotificacaoFalhaHandler
+    + NotificacaoObserver(servico: ServicoNotificacaoExterno)
+    + NotificacaoObserver(servico: ServicoNotificacaoExterno, falhaHandler: NotificacaoFalhaHandler)
+    + atualizar(a: Anuncio, evento: TipoEvento): void
+  }
+  class NotificacaoInteressadosObserver implements Observer {
+    - saida: Saida
+    - falhaHandler: NotificacaoFalhaHandler
+    + NotificacaoInteressadosObserver(saida: Saida)
+    + NotificacaoInteressadosObserver(saida: Saida, falhaHandler: NotificacaoFalhaHandler)
+    + atualizar(a: Anuncio, evento: TipoEvento): void
+  }
+  class EmailAdapter implements ServicoNotificacaoExterno {
+    - api: EmailApi
+    + enviarMensagem(a: Anuncio, tipo: TipoEvento): void throws NotificacaoException
+    - obterEmailAnunciante(a: Anuncio): String
+    - montarAssunto(a: Anuncio, tipo: TipoEvento): String
+    - montarCorpoEmail(a: Anuncio, tipo: TipoEvento): String
+  }
+  class SmsAdapter implements ServicoNotificacaoExterno {
+    - api: SmsApi
+    + enviarMensagem(a: Anuncio, tipo: TipoEvento): void throws NotificacaoException
+  }
+  class EmailApi {
+    + sendEmail(destinatario: String, assunto: String, corpo: String): void
+  }
+  class SmsApi {
+    - {static} CONFIG_URL: String
+    + sendSms(destinatario: String, mensagem: String): void
+  }
+  class Notificacao {
+    - destinatario: String
+    - mensagem: String
+    + Notificacao(destinatario: String, mensagem: String)
+    + getDestinatario(): String
+    + getMensagem(): String
+  }
+  enum TipoEvento {
+    MUDANCA_ESTADO
+    NOVO_INTERESSADO
+    PRECO_ALTERADO
+  }
   Observer <|.. NotificacaoObserver
   Observer <|.. NotificacaoInteressadosObserver
   ServicoNotificacaoExterno <|.. EmailAdapter
   ServicoNotificacaoExterno <|.. SmsAdapter
-  Observer ..> Anuncio : atualizar(Anuncio)
+  Anuncio --> Observer : notifica
 }
-Anuncio --> Observer : notifica
 
 ' ==================== CONFIG (Singleton) ====================
 package "config" {
   class Configuracao <<Singleton>> {
-    - parametros: Properties
     - {static} instancia: Configuracao
+    - parametros: Properties
+    - {static} ARQUIVO_PADRAO: String
     - Configuracao()
     + {static} getInstancia(): Configuracao
-    + getPrecoMinimoModeracao(): double
+    + carregarParametros(): void
+    + getParametro(chave: String): String
+    + setParametro(chave: String, valor: String): void
     + getTermosImproprios(): List<String>
+    + getPrecoMinimoModeracao(): double
     + getDescricaoTamanhoMinimo(): int
     + getFotosMinimoModeracao(): int
   }
 }
+ServicoModeracao --> Configuracao
+EmailApi ..> Configuracao : usa URL
+SmsApi ..> Configuracao : usa URL
 
 ' ==================== MODERAÇÃO ====================
 package "moderacao" {
   class ServicoModeracao {
     - config: Configuracao
-    + validarRegras(Anuncio): ResultadoModeracao
+    + validarRegras(anuncio: Anuncio): ResultadoModeracao
   }
   class ResultadoModeracao {
     - aprovado: boolean
     - erros: List<String>
+    + ResultadoModeracao(aprovado: boolean, erros: List<String>)
+    + isAprovado(): boolean
+    + getErros(): List<String>
   }
   ServicoModeracao --> Configuracao
   ServicoModeracao ..> Anuncio : valida
@@ -318,8 +578,8 @@ package "moderacao" {
 ' ==================== CSV ====================
 package "csv" {
   class CarregadorCSV {
-    + carregarUsuarios(Path): List<Usuario>
-    + carregarAnuncios(Path, List<Usuario>): List<Anuncio>
+    + {static} carregarUsuarios(path: Path): List<Usuario>
+    + {static} carregarAnuncios(path: Path, usuarios: List<Usuario>, anuncios: List<Anuncio>, donoDoAnuncio: Map<Anuncio, Usuario>): void
   }
   CarregadorCSV ..> Usuario : cria
   CarregadorCSV ..> Anuncio : cria
@@ -328,16 +588,38 @@ package "csv" {
 ' ==================== SAÍDA (E2) ====================
 package "saida" {
   interface Saida {
-    + escrever(String): void
-    + escreverSemQuebra(String): void
+    + escrever(mensagem: String): void
+    + escreverSemQuebra(mensagem: String): void
   }
-  class ConsoleSaida
+  class ConsoleSaida implements Saida {
+    + escrever(mensagem: String): void
+    + escreverSemQuebra(mensagem: String): void
+  }
   Saida <|.. ConsoleSaida
+}
+NotificacaoInteressadosObserver --> Saida
+
+' ==================== UTIL ====================
+package "util" {
+  class FormatadorMoeda {
+    - FormatadorMoeda()
+    + {static} formatarReal(valor: double): String
+  }
 }
 
 ' ==================== MAIN ====================
 class Main {
-  + {static} main(String[]): void
+  + {static} main(args: String[]): void
+  - {static} pausarParaContinuar(saida: Saida, sc: Scanner): void
+  - {static} lerInt(sc: Scanner, padrao: int): int
+  - {static} lerIntComPadrao(sc: Scanner, mensagem: String, padrao: int): int
+  - {static} lerDouble(sc: Scanner, padrao: double): double
+  - {static} lerDoubleComPadrao(sc: Scanner, mensagem: String, padrao: double): double
+  - {static} buscarUsuarioPorEmail(usuarios: List<Usuario>, email: String): Usuario
+  - {static} listarMensagensChat(saida: Saida, conversas: List<Conversa>, usuarioLogado: Usuario): void
+  - {static} listarMensagensConfirmacaoPagamento(saida: Saida, solicitacoes: List<SolicitacaoCompra>, donoDoAnuncio: Map<Anuncio, Usuario>, usuario: Usuario): void
+  - {static} filtrarAnunciosAtivos(anuncios: List<Anuncio>): List<Anuncio>
+  - {static} montarOpcoesBusca(saida: Saida, sc: Scanner): List<Integer>
 }
 Main ..> Saida : usa
 Main ..> CarregadorCSV : usa
@@ -348,5 +630,10 @@ Main ..> BuscaService : usa
 Main ..> ImovelPrototypeRegistry : usa
 Main ..> Anuncio : gerencia
 Main ..> Usuario : gerencia
+Main ..> FormatadorMoeda : usa
+Main ..> Compra : gerencia
+Main ..> SolicitacaoCompra : gerencia
+Main ..> Conversa : gerencia
+Main ..> ChatMediator : gerencia
 
 @enduml

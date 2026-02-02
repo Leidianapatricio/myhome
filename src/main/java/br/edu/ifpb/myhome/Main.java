@@ -30,7 +30,6 @@ import br.edu.ifpb.myhome.csv.CarregadorCSV;
 import br.edu.ifpb.myhome.chat.Conversa;
 import br.edu.ifpb.myhome.compra.Compra;
 import br.edu.ifpb.myhome.compra.SolicitacaoCompra;
-import br.edu.ifpb.myhome.moderacao.ResultadoModeracao;
 import br.edu.ifpb.myhome.chat.Mensagem;
 import br.edu.ifpb.myhome.prototype.ImovelPrototypeRegistry;
 import br.edu.ifpb.myhome.imovel.Apartamento;
@@ -134,18 +133,13 @@ public class Main {
                 saida.escrever("Nenhum usuário logado.");
             }
             saida.escrever("1 - Entrar no sistema (digite seu email)");
-            saida.escrever("2 - Sair do sistema");
-            saida.escrever("3 - Cadastrar usuário");
-            saida.escrever("4 - Listar usuários");
-            saida.escrever("5 - Criar anúncio");
-            saida.escrever("6 - Buscar imóveis / visualizar / favoritar / comprar anúncio");
-            saida.escrever("7 - Chat (conversar sobre anúncio)");
-            saida.escrever("8 - Listar compras");
-            saida.escrever("9 - Consultar log de mudanças de estado");
-            if (usuarioLogado != null) {
-                saida.escrever("10 - Voltar ao menu reduzido");
-                saida.escrever("11 - Submeter anúncio (moderação automática)");
-            }
+            saida.escrever("2 - Cadastrar usuário");
+            saida.escrever("3 - Listar usuários");
+            saida.escrever("4 - Criar anúncio");
+            saida.escrever("5 - Buscar imóveis / visualizar / favoritar / comprar anúncio");
+            saida.escrever("6 - Chat (conversar sobre anúncio)");
+            saida.escrever("7 - Listar compras");
+            saida.escrever("8 - Consultar log de mudanças de estado");
             saida.escrever("0 - Sair");
             saida.escreverSemQuebra("Opção: ");
             try {
@@ -154,9 +148,7 @@ public class Main {
                 opcao = -1;
             }
 
-            if (opcao == 10 && usuarioLogado != null) {
-                exibirMenuCompleto = false;
-            } else if (opcao == 1) {
+            if (opcao == 1) {
                 saida.escrever("\n--- Entrar no sistema ---");
                 saida.escreverSemQuebra("Digite seu email: ");
                 String email = sc.nextLine().trim();
@@ -193,14 +185,6 @@ public class Main {
                     }
                 }
             } else if (opcao == 2) {
-                if (usuarioLogado != null) {
-                    saida.escrever(usuarioLogado.getNome() + " saiu do sistema.");
-                    usuarioLogado = null;
-                } else {
-                    saida.escrever("Nenhum usuário logado.");
-                }
-                pausarParaContinuar(saida, sc);
-            } else if (opcao == 3) {
                 saida.escrever("\n--- Cadastro de usuário ---");
                 saida.escreverSemQuebra("Nome: ");
                 String nome = sc.nextLine().trim();
@@ -216,7 +200,7 @@ public class Main {
                     saida.escrever("Usuário cadastrado (ID: " + u.getId() + "): " + u.getNome());
                 }
                 pausarParaContinuar(saida, sc);
-            } else if (opcao == 4) {
+            } else if (opcao == 3) {
                 saida.escrever("\n--- Usuários ---");
                 if (usuarios.isEmpty()) {
                     saida.escrever("Nenhum usuário cadastrado.");
@@ -227,7 +211,7 @@ public class Main {
                     }
                 }
                 pausarParaContinuar(saida, sc);
-            } else if (opcao == 5) {
+            } else if (opcao == 4) {
                 Usuario usuario = usuarioLogado;
                 if (usuario == null && !usuarios.isEmpty()) {
                     saida.escrever("\n--- Usuários ---");
@@ -324,7 +308,7 @@ public class Main {
                     saida.escrever("Usuário inválido.");
                     pausarParaContinuar(saida, sc);
                 }
-            } else if (opcao == 6) {
+            } else if (opcao == 5) {
                 Usuario usuario = usuarioLogado;
                 if (usuario == null && !usuarios.isEmpty()) {
                     saida.escrever("\n--- Usuários ---");
@@ -560,7 +544,7 @@ public class Main {
                     saida.escrever("Usuário inválido.");
                     pausarParaContinuar(saida, sc);
                 }
-            } else if (opcao == 7) {
+            } else if (opcao == 6) {
                 if (usuarios.isEmpty() || anuncios.isEmpty()) {
                     saida.escrever("Cadastre usuários e anúncios primeiro.");
                     pausarParaContinuar(saida, sc);
@@ -666,7 +650,7 @@ public class Main {
                         pausarParaContinuar(saida, sc);
                     }
                 }
-            } else if (opcao == 8) {
+            } else if (opcao == 7) {
                 saida.escrever("\n--- Listar compras ---");
                 if (compras.isEmpty()) {
                     saida.escrever("Nenhuma compra registrada.");
@@ -678,7 +662,7 @@ public class Main {
                     }
                 }
                 pausarParaContinuar(saida, sc);
-            } else if (opcao == 9) {
+            } else if (opcao == 8) {
                 saida.escrever("\n--- Log de mudanças de estado ---");
                 List<LogMudancaEstado.EntradaLogEstado> entradas = LogMudancaEstado.getInstancia().getEntradas();
                 if (entradas.isEmpty()) {
@@ -686,38 +670,6 @@ public class Main {
                 } else {
                     for (LogMudancaEstado.EntradaLogEstado e : entradas) {
                         saida.escrever(e.toString());
-                    }
-                }
-                pausarParaContinuar(saida, sc);
-            } else if (opcao == 11 && usuarioLogado != null) {
-                List<Anuncio> rascunhos = new ArrayList<>();
-                for (Anuncio a : anuncios) {
-                    if (donoDoAnuncio.get(a) == usuarioLogado && "Rascunho".equals(a.getEstadoAtual())) {
-                        rascunhos.add(a);
-                    }
-                }
-                if (rascunhos.isEmpty()) {
-                    saida.escrever("Você não tem anúncios em rascunho para submeter.");
-                } else {
-                    saida.escrever("\n--- Submeter anúncio (RF03) ---");
-                    for (int i = 0; i < rascunhos.size(); i++) {
-                        Anuncio a = rascunhos.get(i);
-                        saida.escrever((i + 1) + ") " + a.getTitulo() + " | " + FormatadorMoeda.formatarReal(a.getPreco()) + " | " + a.getEstadoAtual());
-                    }
-                    saida.escreverSemQuebra("Número do anúncio para submeter (1-" + rascunhos.size() + ") ou 0 para cancelar: ");
-                    int idx = lerInt(sc, 0);
-                    if (idx >= 1 && idx <= rascunhos.size()) {
-                        Anuncio a = rascunhos.get(idx - 1);
-                        ResultadoModeracao res = a.submeterParaPublicacao();
-                        if (res.isAprovado()) {
-                            saida.escrever("Anúncio aprovado e publicado (moderação automática).");
-                        } else {
-                            saida.escrever("Anúncio não aprovado na validação automática:");
-                            for (String err : res.getErros()) saida.escrever("  - " + err);
-                            saida.escrever("Corrija e tente submeter novamente.");
-                        }
-                    } else {
-                        saida.escrever("Cancelado.");
                     }
                 }
                 pausarParaContinuar(saida, sc);
