@@ -53,6 +53,7 @@ import br.edu.ifpb.myhome.validacao.ValidadorAnuncio;
 import br.edu.ifpb.myhome.validacao.ValidadorImovel;
 import br.edu.ifpb.myhome.validacao.ValidadorPreco;
 import br.edu.ifpb.myhome.validacao.ValidadorTitulo;
+import br.edu.ifpb.myhome.validacao.ValidadorUsuario;
 
 public class Main {
 
@@ -170,11 +171,18 @@ public class Main {
                         if (sc.nextLine().trim().equalsIgnoreCase("s")) {
                             saida.escreverSemQuebra("Nome: ");
                             String nome = sc.nextLine().trim();
-                            Usuario novo = new Usuario(nome.isEmpty() ? "Usuário" : nome, email);
-                            usuarios.add(novo);
-                            usuarioLogado = novo;
-                            saida.escrever("Cadastrado e logado como " + novo.getNome() + ".");
-                            pausarParaContinuar(saida, sc);
+                            List<String> errosUsuario = new ValidadorUsuario().validar(nome, email);
+                            if (!errosUsuario.isEmpty()) {
+                                for (String msg : errosUsuario) saida.escrever(msg);
+                                saida.escrever("Cadastro cancelado.");
+                                pausarParaContinuar(saida, sc);
+                            } else {
+                                Usuario novo = new Usuario(nome, email);
+                                usuarios.add(novo);
+                                usuarioLogado = novo;
+                                saida.escrever("Cadastrado e logado como " + novo.getNome() + ".");
+                                pausarParaContinuar(saida, sc);
+                            }
                         } else {
                             saida.escrever("Entrada cancelada.");
                             pausarParaContinuar(saida, sc);
@@ -199,9 +207,15 @@ public class Main {
                 String nome = sc.nextLine().trim();
                 saida.escreverSemQuebra("Email: ");
                 String email = sc.nextLine().trim();
-                Usuario u = new Usuario(nome, email);
-                usuarios.add(u);
-                saida.escrever("Usuário cadastrado (ID: " + u.getId() + "): " + u.getNome());
+                List<String> errosUsuario = new ValidadorUsuario().validar(nome, email);
+                if (!errosUsuario.isEmpty()) {
+                    for (String msg : errosUsuario) saida.escrever(msg);
+                    saida.escrever("Nenhum usuário foi cadastrado.");
+                } else {
+                    Usuario u = new Usuario(nome, email);
+                    usuarios.add(u);
+                    saida.escrever("Usuário cadastrado (ID: " + u.getId() + "): " + u.getNome());
+                }
                 pausarParaContinuar(saida, sc);
             } else if (opcao == 4) {
                 saida.escrever("\n--- Usuários ---");
