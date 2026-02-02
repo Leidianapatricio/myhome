@@ -228,7 +228,8 @@ public class Main {
                 }
                 if (usuario != null) {
                     saida.escrever("\n--- Novo anúncio (por " + usuario.getNome() + ") ---");
-                        saida.escreverSemQuebra("Título do anúncio: ");
+                        saida.escrever("Título do anúncio (não use palavras de baixo calão ou termos inadequados): ");
+                        saida.escreverSemQuebra("Título: ");
                         String titulo = sc.nextLine().trim();
                         saida.escrever("Tipo de oferta: 1=Venda 2=Aluguel 3=Temporada");
                         saida.escreverSemQuebra("Opção: ");
@@ -257,7 +258,9 @@ public class Main {
                             imovel.setBairro(sc.nextLine().trim());
                             saida.escreverSemQuebra("Área (m²) [" + (int) imovel.getAreaMetrosQuadrados() + "]: ");
                             imovel.setAreaMetrosQuadrados(lerDoubleComPadrao(sc, imovel.getAreaMetrosQuadrados()));
-                            saida.escreverSemQuebra("Descrição do imóvel [" + (imovel.getDescricao() != null ? imovel.getDescricao() : "") + "]: ");
+                            int descMin = Configuracao.getInstancia().getDescricaoTamanhoMinimo();
+                            saida.escrever("Descrição do imóvel (mín. " + descMin + " caracteres para publicação, ou informe fotos)");
+                            saida.escreverSemQuebra("Descrição [" + (imovel.getDescricao() != null ? imovel.getDescricao() : "") + "]: ");
                             String desc = sc.nextLine().trim();
                             if (!desc.isEmpty()) imovel.setDescricao(desc);
                             saida.escreverSemQuebra("Quantidade de suítes [" + imovel.getQuantidadeSuites() + "]: ");
@@ -819,9 +822,8 @@ public class Main {
         saida.escrever("Venda: " + FormatadorMoeda.formatarReal(a.getValorVenda()) + " | Aluguel: " + FormatadorMoeda.formatarReal(a.getValorAluguel()) + "/mês | Temporada: " + FormatadorMoeda.formatarReal(a.getValorTemporada()) + "/diária");
         if (a.getImovel() != null) {
             saida.escrever("Área: " + a.getImovel().getAreaMetrosQuadrados() + " m² | Suítes: " + a.getImovel().getQuantidadeSuites());
-            if (a.getImovel().getDescricao() != null && !a.getImovel().getDescricao().isEmpty()) {
-                saida.escrever("Descrição: " + a.getImovel().getDescricao());
-            }
+            String descricao = a.getImovel().getDescricao();
+            saida.escrever("Descrição: " + (descricao != null && !descricao.isEmpty() ? descricao : "(não informada)"));
         }
     }
 

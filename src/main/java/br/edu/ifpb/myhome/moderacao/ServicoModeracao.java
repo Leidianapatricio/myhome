@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * RF03 - Publicação e Moderação. Regras dinâmicas (carregadas de config):
- * - Título e descrição não podem conter termos proibidos.
+ * - Título e descrição não podem conter palavras de baixo calão, termos pejorativos ou inadequados.
  * - Preço deve ser condizente (mínimo configurável; evita zero, um real, valores sem sentido).
  * - Anúncio deve ter ao menos uma foto OU quantidade mínima de texto na descrição.
  * Moderação pode ser manual (aprovar/rejeitar após submissão) ou automatizada (validação na submissão).
@@ -30,7 +30,7 @@ public class ServicoModeracao {
             return new ResultadoModeracao(false, erros);
         }
 
-        // Regra: título e descrição não podem conter termos proibidos
+        // Regra: título e descrição não podem conter palavras de baixo calão / termos proibidos
         List<String> termosProibidos = config.getTermosImproprios();
         if (!termosProibidos.isEmpty()) {
             String titulo = anuncio.getTitulo() != null ? anuncio.getTitulo().toLowerCase() : "";
@@ -41,10 +41,10 @@ public class ServicoModeracao {
             for (String termo : termosProibidos) {
                 if (termo.isEmpty()) continue;
                 if (titulo.contains(termo)) {
-                    erros.add("Título contém termo não permitido: \"" + termo + "\".");
+                    erros.add("O título não pode conter palavras de baixo calão ou termos inadequados: \"" + termo + "\".");
                 }
                 if (descricao.contains(termo)) {
-                    erros.add("Descrição contém termo não permitido: \"" + termo + "\".");
+                    erros.add("A descrição não pode conter palavras de baixo calão ou termos inadequados: \"" + termo + "\".");
                 }
             }
         }

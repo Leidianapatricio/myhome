@@ -41,47 +41,6 @@ O sistema utiliza **padrões de projeto** (State, Strategy, Observer, Adapter, M
 
 ---
 
-## Como Colocar o Projeto em Funcionamento
-
-### Pré-requisitos
-
-- **Java 11** ou superior (JDK).
-- **Maven 3.x** (opcional; se não tiver Maven, os scripts usam `javac` e `java` diretamente no Windows).
-
-### Execução
-
-**Com Maven (Linux/Mac/Windows):**
-
-```bash
-# Na raiz do projeto
-mvn compile exec:java
-```
-
-**Scripts na raiz do projeto:**
-
-- **Linux/Mac:** `./run.sh` (usa Maven).
-- **Windows:** `run.bat` (tenta Maven; se não encontrar, compila com `javac` e executa com `java`).
-
-**Execução manual sem Maven (qualquer SO):**
-
-```bash
-# Compilar
-javac -d bin -encoding UTF-8 -sourcepath src/main/java src/main/java/br/edu/ifpb/myhome/**/*.java src/main/java/br/edu/ifpb/myhome/Main.java
-# (ou incluir todos os .java do projeto)
-
-# Executar
-java -cp bin br.edu.ifpb.myhome.Main
-```
-
-### Estrutura de dados (CSV)
-
-- **`dados/usuarios.csv`**: `nome;email` (uma linha por usuário).
-- **`dados/anuncios.csv`**: colunas `titulo;preco;tipo;endereco;idDono;tipoOferta;valorVenda;valorAluguel;valorTemporada;area;descricao;suites;bairro;extras...` (ver comentários no próprio arquivo para detalhes e exemplos de bairros: Jaguaribe, Castelo Branco, Bancários, Bessa, Tambaú, Altiplano).
-
-Se os arquivos existirem, usuários e anúncios são carregados automaticamente ao iniciar a aplicação.
-
----
-
 ## Classes do Projeto
 
 ### Pacote principal
@@ -112,7 +71,7 @@ Se os arquivos existirem, usuários e anúncios são carregados automaticamente 
 | `FiltroQuartos` | Filtro por número mínimo de quartos (apartamentos). |
 | `FiltroTitulo` | Filtro por trecho do título. |
 
-### `chat` (Mediator)
+### `chat` (RF08 – Mediator)
 
 | Classe | Descrição |
 |--------|-----------|
@@ -132,6 +91,13 @@ Se os arquivos existirem, usuários e anúncios são carregados automaticamente 
 | Classe | Descrição |
 |--------|-----------|
 | `Configuracao` | Singleton; configuração centralizada (config.properties). |
+
+### `moderacao` (RF03)
+
+| Classe | Descrição |
+|--------|-----------|
+| `ServicoModeracao` | Valida anúncio contra regras dinâmicas (termos proibidos, preço mínimo, descrição/fotos mínimas). |
+| `ResultadoModeracao` | Encapsula resultado da validação (aprovado ou lista de erros). |
 
 ### `csv` (E1)
 
@@ -243,7 +209,7 @@ Se os arquivos existirem, usuários e anúncios são carregados automaticamente 
 | **Strategy** | `pagamento/` | Formas de pagamento (Cartão, PIX, Boleto) implementam `FormaPagamento`; `ServicoPagamento` usa a estratégia escolhida. |
 | **Observer** | `anuncio/Anuncio` + `notificacao/` | `Anuncio` mantém lista de `Observer`; ao mudar estado, notifica. `NotificacaoObserver` e `NotificacaoInteressadosObserver` reagem às mudanças. |
 | **Adapter** | `notificacao/` | `EmailAdapter` e `SmsAdapter` implementam `ServicoNotificacaoExterno`, adaptando APIs externas (e-mail/SMS) ao uso pelo sistema. |
-| **Mediator** | `chat/` | `Conversa` é o mediador; `Usuario` (interessado e dono) não se comunica diretamente, apenas via `ChatMediator` (envio de mensagens). |
+| **Mediator** | `chat/` (RF08) | `Conversa` é o mediador; `Usuario` (interessado e dono) não se comunica diretamente, apenas via `ChatMediator` (envio de mensagens). |
 | **Factory Method** | `factory/` | `ImovelFactory` define `criarImovel()`; `CasaFactory`, `ApartamentoFactory` e `TerrenoFactory` criam o tipo correspondente. |
 | **Chain of Responsibility** | `validacao/` | `ValidadorAnuncio` encadeia validadores (Preço → Título → Imóvel); cada um pode repassar ao próximo ou rejeitar. |
 | **Singleton** | `config/Configuracao` | Uma única instância de configuração; `getInstancia()` retorna o mesmo objeto; parâmetros carregados de `config.properties`. |
@@ -254,68 +220,74 @@ Se os arquivos existirem, usuários e anúncios são carregados automaticamente 
 
 ## Requisitos do Projeto
 
-Lista dos requisitos considerados no projeto e onde/how são atendidos:
+Lista dos requisitos na ordem do enunciado (PDF) e onde/how são atendidos:
 
 | ID | Requisito | Onde / Como foi resolvido |
 |----|-----------|---------------------------|
-| **RF01** | Cadastro e gestão de usuários e anúncios | Menu principal: Cadastrar usuário (nome, e-mail), Listar usuários, Criar anúncio (com tipo de oferta, valores, imóvel, validação em cadeia). Entrada por e-mail; escolha de usuário quando não logado. |
-| **RF02** | Instâncias de anúncios padrão para certos tipos de imóveis | Prototype: `CasaPadrao`, `ApartamentoPadrao`, `TerrenoPadrao` com configuração padrão; `ImovelPrototypeRegistry.criarRegistroPadrao()` e `clonarPrototipo(tipo)`; criação de anúncio inicia com clone do protótipo; campos com valor padrão entre colchetes (Enter mantém). |
-| **RF03** | Publicação e moderação | Anúncios criados em **Rascunho**; opção **Submeter anúncio** aplica regras dinâmicas (termos proibidos, preço mínimo, descrição/fotos mínimas via `ServicoModeracao`); aprovado vai direto para **Ativo** (moderação automática). Busca/visualização exibem apenas anúncios **Ativos**. |
-| **RF04** | Log de mudanças de estado do anúncio | `LogMudancaEstado` (singleton) registra cada mudança (anúncio, estado anterior, estado novo); chamado em `Anuncio.setEstado`; opção "Consultar log de mudanças de estado" no menu. |
-| **RF05** | Chat e notificações | **Chat:** Mediator em `chat/` (`ChatMediator`, `Conversa`); usuários enviam mensagens via mediador. **Notificações:** Observer em `notificacao/` (`Observer`, `NotificacaoObserver`, `NotificacaoInteressadosObserver`); Adapter para e-mail/SMS (`ServicoNotificacaoExterno`, `EmailAdapter`); `Anuncio` notifica observers ao mudar estado. |
-| **RF06** | Busca avançada (múltiplos critérios, combináveis, extensível) | Strategy em `busca/`: `FiltroBusca` e implementações (Tipo, Bairro, Preço, Área, Quartos, Título); `BuscaService.buscar(anuncios, filtros)` aplica AND; usuário escolhe critérios (1,2 ou 1,2,3 etc.); novos filtros sem alterar `BuscaService`. |
-| **RF07** | Configuração centralizada | Singleton `Configuracao`; `getInstancia().carregarParametros()` lê `config.properties`; taxas, limites, termos, URLs centralizados. |
-| **E1** | Carregar dados iniciais de CSV | `CarregadorCSV.carregarUsuarios(path)` e `carregarAnuncios(path, ...)`; `dados/usuarios.csv` e `dados/anuncios.csv`; parse por `;`, suporte a tipo de oferta, área, descrição, suítes, bairro. |
-| **E2** | Abstração de saída (evitar System.out no domínio) | Interface `Saida` e `ConsoleSaida`; `Main` e observadores usam `Saida` para mensagens; facilita troca por log ou UI. |
+| **RF01** | Criação de Anúncios | Cadastro de anúncios de diferentes tipos (Casa, Apartamento, Terreno); processo guiado; atributos obrigatórios: título, tipo do imóvel, preço; validação em cadeia (Chain of Responsibility). Menu: Cadastrar usuário, Listar usuários, Criar anúncio; entrada por e-mail. |
+| **RF02** | Instâncias de anúncios padrão para certos tipos de imóveis | Prototype: `CasaPadrao`, `ApartamentoPadrao`, `TerrenoPadrao` com configuração padrão; `ImovelPrototypeRegistry.criarRegistroPadrao()` e `clonarPrototipo(tipo)`; criação inicia com clone do protótipo; campos com valor padrão entre colchetes (Enter mantém). |
+| **RF03** | Publicação e moderação | Anúncios criados em **Rascunho**; opção **Submeter anúncio** aplica regras dinâmicas (termos proibidos, preço mínimo, descrição/fotos mínimas via `ServicoModeracao`); aprovado vai para **Ativo** (moderação automática). Busca/visualização exibem apenas anúncios **Ativos**. |
+| **RF04** | Fases do ciclo de vida de um anúncio | Estados: Rascunho, Moderação, Ativo, Vendido/Alugado (Arquivado), Suspenso. Sempre que o anúncio mudar de estado, o anunciante é notificado (Observer) e um log registra a mudança (`LogMudancaEstado` em `Anuncio.setEstado`). Opção "Consultar log de mudanças de estado" no menu. |
+| **RF05** | Notificação do usuário | Sistema notifica usuários sobre eventos (ex.: mudança de estado do anúncio). Solução flexível para alterar o canal de notificação (Observer + Adapter). Implementado: notificação via e-mail (`EmailAdapter`, `ServicoNotificacaoExterno`); `Anuncio` notifica observers ao mudar estado. |
+| **RF06** | Busca avançada | Múltiplos critérios: tipo de imóvel, bairro (localização), faixa de preço, área, número de quartos, trecho do título, tipo de oferta (venda/aluguel/temporada), número mínimo de suítes. Filtros combinados dinamicamente (AND); filtros específicos por tipo de imóvel. `FiltroBusca` e implementações; `BuscaService.buscar(anuncios, filtros)`; novos filtros sem modificar código de busca. |
+| **RF07** | Configuração centralizada | Taxas de comissão, limites de upload, termos impróprios, URLs de serviços externos carregados de fonte única e acessível globalmente. Singleton `Configuracao`; `config.properties`; `getInstancia().carregarParametros()`. |
+| **RF08** | Novo padrão (Chat) | Requisito adicional resolvido com padrão **Mediator**: chat entre interessado e dono do anúncio. `Conversa` é o mediador; usuários enviam mensagens via `ChatMediator`; opção **Chat** no menu (interessado conversa sobre anúncio; dono vê e responde conversas). |
+| **E1** | Povoar dados automaticamente a partir de CSV | `CarregadorCSV.carregarUsuarios(path)` e `carregarAnuncios(path, ...)`; `dados/usuarios.csv` e `dados/anuncios.csv`; parse por `;`; usuários e anúncios carregados ao iniciar a aplicação. |
+| **E2** | Não usar System.out no domínio; fluxo de mensagens reutilizável | Interface `Saida` e `ConsoleSaida`; `Main` e observadores usam `Saida` para exibir mensagens; facilita troca por log ou UI sem alterar o domínio. |
 
 ---
 
 ## Especificação de Como Cada Requisito Foi Resolvido
 
-### RF01 – Cadastro e gestão de usuários e anúncios
+### RF01 – Criação de Anúncios
 
 - **Onde:** `Main` (menu e fluxos), `usuario/Usuario`, `anuncio/Anuncio`, `imovel/`, `validacao/` (Chain of Responsibility).
-- **Como:** Opção **Cadastrar usuário** pede nome e e-mail e adiciona à lista. **Listar usuários** exibe todos. **Criar anúncio** exige usuário (logado ou escolhido na lista); pede título, tipo de oferta (venda/aluguel/temporada), valores, tipo de imóvel (Casa, Apartamento, Terreno); o imóvel é obtido por **RF02** (clone do protótipo) e o usuário pode manter padrões ou alterar (endereço, bairro, área, descrição, suítes, quartos/andar/elevador/quintal); validação em cadeia (Preço → Título → Imóvel) antes de publicar. **Entrar no sistema** por e-mail; se não existir usuário, pode cadastrar na hora.
+- **Como:** O sistema permite o cadastro de anúncios de diferentes tipos de imóveis (Casa, Apartamento, Terreno). O processo de criação é guiado: título, tipo do imóvel e preço são obrigatórios; cada tipo possui características específicas (apartamento: andar, elevador; casa: quintal). Opção **Cadastrar usuário** (nome, e-mail), **Listar usuários**, **Criar anúncio** (tipo de oferta venda/aluguel/temporada, valores, imóvel obtido por RF02, validação em cadeia Preço → Título → Imóvel). Entrada por e-mail; escolha de usuário quando não logado. Flexível para adicionar novos tipos de imóveis (factory, prototype).
 
 ### RF02 – Instâncias de anúncios padrão para certos tipos de imóveis
 
 - **Onde:** `prototype/ImovelPrototype`, `CasaPadrao`, `ApartamentoPadrao`, `TerrenoPadrao`, `ImovelPrototypeRegistry`; uso em `Main` na criação de anúncio.
-- **Como:** Ao criar um anúncio, o usuário escolhe o tipo (Casa, Apartamento, Terreno). O sistema obtém uma **cópia** da configuração padrão via `ImovelPrototypeRegistry.criarRegistroPadrao()` e `clonarPrototipo("casa"|"apartamento"|"terreno")`. **Apartamento** inicia com: unidade habitacional em condomínio, 2 quartos, 60 m², 1 suíte, andar 1, sem elevador. **Casa** inicia com: 80 m², 1 suíte, descrição "Casa residencial padrão", sem quintal. **Terreno** inicia com: 200 m², descrição "Terreno padrão". Os campos são exibidos com o valor padrão entre colchetes (ex.: Área (m²) [60]:); o usuário pode pressionar Enter para manter o padrão ou digitar outro valor. Novas configurações podem ser adicionadas no futuro registrando novos protótipos no registro.
+- **Como:** Certos tipos de anúncios, quando criados, iniciam com configuração padrão. Apartamento: unidade habitacional em condomínio, 2 quartos, 60 m², 1 suíte, andar 1, sem elevador. Casa: 80 m², 1 suíte, descrição "Casa residencial padrão", sem quintal. Terreno: 200 m², descrição "Terreno padrão". O sistema obtém uma cópia via `ImovelPrototypeRegistry.criarRegistroPadrao()` e `clonarPrototipo("casa"|"apartamento"|"terreno")`. Campos exibidos com valor padrão entre colchetes (Enter mantém). Novas configurações podem ser registradas no futuro.
 
 ### RF03 – Publicação e moderação
 
 - **Onde:** `estado/EstadoAnuncio`, `RascunhoState`, `AtivoState`, `ArquivadoState`; `moderacao/ServicoModeracao`, `ResultadoModeracao`; `config.properties` (regras dinâmicas: `termos.improprios`, `preco.minimo`, `moderacao.descricao.minimo`, `moderacao.fotos.minimo`); `Anuncio.quantidadeFotos`; uso em `Main` (opção 11).
-- **Como:** O anunciante cria o anúncio (estado **Rascunho**); na criação é informada a **quantidade de fotos**. Para publicar, usa a opção **11 - Submeter anúncio**: o sistema valida automaticamente (moderação automática): título e descrição não podem conter termos proibidos; preço deve ser condizente (mínimo configurável, por tipo de oferta); anúncio deve ter ao menos uma foto OU descrição com quantidade mínima de caracteres. Se aprovado, o anúncio vai direto para **Ativo** (publicado); se reprovado, permanece em Rascunho e os erros são exibidos. Busca de imóveis, visualização e favoritos exibem apenas anúncios **Ativos**. `Anuncio.setEstado(novoEstado)` dispara o log (RF04) e notificações (RF05). Ao confirmar pagamento pelo vendedor, o anúncio passa a `ArquivadoState`.
+- **Como:** O anunciante submete o anúncio; todos passam por etapa de moderação antes de se tornarem públicos. Regras dinâmicas: título e descrição não podem conter termos proibidos; preço condizente (mínimo configurável); ao menos uma foto ou quantidade mínima de texto na descrição. Moderação automática: opção **Submeter anúncio** valida; aprovado vai para **Ativo**; reprovado permanece em Rascunho com erros exibidos. Busca/visualização exibem apenas anúncios **Ativos**.
 
-### RF04 – Log de mudanças de estado do anúncio
+### RF04 – Fases do ciclo de vida de um anúncio
 
-- **Onde:** `anuncio/LogMudancaEstado`, `estado/EstadoAnuncio` e suas implementações.
-- **Como:** Ao mudar o estado do anúncio (`setEstado` em `Anuncio`), é chamado `LogMudancaEstado.getInstancia().registrar(anuncio, estadoAnterior, estadoNovo)`. O log mantém o histórico de transições (anúncio, estado anterior, estado novo). A opção **Consultar log de mudanças de estado** no menu principal exibe essas entradas.
+- **Onde:** `estado/EstadoAnuncio` (RascunhoState, ModeracaoState, AtivoState, ArquivadoState, SuspensoState), `anuncio/LogMudancaEstado`; `Anuncio` delega ao estado atual e chama log e notificação ao mudar.
+- **Como:** Cada anúncio tem ciclo de vida: **Rascunho** (inicial) → **Moderação** (em revisão) → **Ativo** (aprovado e visível) → **Vendido/Alugado** (Arquivado) ou **Suspenso** (reprovado ou retirado; volta para Rascunho). Sempre que o anúncio mudar de estado, o anunciante é notificado automaticamente (Observer) e um mecanismo de **Log** retém a informação da mudança (`LogMudancaEstado.getInstancia().registrar(anuncio, estadoAnterior, estadoNovo)` chamado em `Anuncio.setEstado`). Opção **Consultar log de mudanças de estado** no menu.
 
-### RF05 – Chat e notificações
+### RF05 – Notificação do usuário
 
-- **Onde:** **Chat:** `chat/ChatMediator`, `Conversa`, `Mensagem`; `usuario/Usuario.enviarMensagemVia(mediator, texto)`. **Notificações:** `notificacao/Observer`, `NotificacaoObserver`, `NotificacaoInteressadosObserver`; `notificacao/ServicoNotificacaoExterno`, `EmailAdapter`; `Anuncio` mantém lista de observers e chama `notificar()` ao mudar estado.
-- **Como:** **Chat:** Padrão Mediator — usuários não se comunicam diretamente; enviam mensagens via `Conversa` (mediador). Opção **Chat** no menu permite “Interessado: conversar sobre um anúncio” e “Dono do anúncio: ver e responder conversas”. **Notificações:** Padrão Observer — ao mudar estado do anúncio, todos os observers são notificados; `NotificacaoObserver` usa serviço externo (e-mail); `NotificacaoInteressadosObserver` usa `Saida` para exibir. Adapter adapta APIs externas (e-mail/SMS) à interface `ServicoNotificacaoExterno`.
+- **Onde:** `notificacao/Observer`, `NotificacaoObserver`, `NotificacaoInteressadosObserver`; `ServicoNotificacaoExterno`, `EmailAdapter`, `SmsAdapter`; `Anuncio` mantém lista de observers e chama `notificar()` ao mudar estado.
+- **Como:** O sistema notifica usuários sobre eventos (ex.: mudança de estado do anúncio). Solução flexível para alterar o canal de notificação (Adapter para Email, SMS, etc.). Uma opção implementada na prática: **Email** via `EmailAdapter` que implementa `ServicoNotificacaoExterno`. Observer: ao mudar estado do anúncio, todos os observers são notificados; `NotificacaoObserver` usa o serviço externo (e-mail); `NotificacaoInteressadosObserver` usa `Saida` para exibir.
 
 ### RF06 – Busca avançada
 
-- **Onde:** `busca/BuscaService`, `busca/FiltroBusca` e implementações (`FiltroTipoImovel`, `FiltroBairro`, `FiltroPreco`, `FiltroArea`, `FiltroQuartos`, `FiltroTitulo`).
-- **Como:** O usuário escolhe **quais** critérios usar (1=Tipo, 2=Bairro, 3=Preço, 4=Área, 5=Quartos), informando os números separados por vírgula (ex.: `1,2` para tipo e bairro). O sistema pergunta apenas os valores dos critérios selecionados. Uma lista de `FiltroBusca` é montada e passada a `BuscaService.buscar(anuncios, filtros)`, que aplica todos em **AND**. Novos filtros podem ser adicionados criando novas classes que implementam `FiltroBusca`, sem alterar o `BuscaService`. Filtros por tipo de imóvel e por quartos são específicos (apartamento, etc.). Bairros de exemplo: Jaguaribe, Castelo Branco, Bancários, Bessa, Tambaú, Altiplano.
+- **Onde:** `busca/BuscaService`, `busca/FiltroBusca` e implementações (`FiltroTipoImovel`, `FiltroBairro`, `FiltroPreco`, `FiltroArea`, `FiltroQuartos`, `FiltroTitulo`, `FiltroTipoOferta`, `FiltroSuites`).
+- **Como:** Usuários podem buscar imóveis aplicando múltiplos critérios (faixa de preço, localização/bairro, área, número de quartos). Filtros combinados dinamicamente (AND). Filtros específicos por tipo de imóvel (ex.: quartos para apartamento). Novos filtros podem ser adicionados sem modificar o código de busca principal (novas classes que implementam `FiltroBusca`). Usuário escolhe critérios (1=Tipo, 2=Bairro, 3=Preço, 4=Área, 5=Quartos); `BuscaService.buscar(anuncios, filtros)` aplica todos em AND.
 
 ### RF07 – Configuração centralizada
 
 - **Onde:** `config/Configuracao`, arquivo `config.properties` (raiz do projeto ou `src/main/resources`).
-- **Como:** `Configuracao` é um **Singleton**; `getInstancia()` retorna a única instância. No início da aplicação, `Configuracao.getInstancia().carregarParametros()` lê taxas, limites, termos e URLs do `config.properties`. O restante do sistema pode obter parâmetros via essa instância.
+- **Como:** O sistema carrega configurações (taxas de comissão padrão, limites de upload de fotos, termos impróprios nos textos dos anúncios, URLs de serviços externos) a partir de uma fonte única e acessível globalmente. `Configuracao` é Singleton; `getInstancia().carregarParametros()` lê o arquivo `.properties`. Informações carregadas de `config.properties` (ou equivalente).
 
-### E1 – Carregar dados iniciais de CSV
+### RF08 – Novo padrão (Chat)
+
+- **Onde:** `chat/ChatMediator`, `Conversa`, `Mensagem`; `usuario/Usuario.enviarMensagemVia(mediator, texto)`; opção **Chat** no menu.
+- **Como:** Requisito adicional resolvido com padrão **Mediator**, não usado para atender aos requisitos anteriores. Chat entre interessado e dono do anúncio: usuários não se comunicam diretamente; enviam mensagens via `Conversa` (mediador). Opção **Chat** no menu: "Interessado: conversar sobre um anúncio" e "Dono do anúncio: ver e responder conversas". `Conversa` centraliza as mensagens entre interessado e dono.
+
+### E1 – Povoar dados automaticamente a partir de CSV
 
 - **Onde:** `csv/CarregadorCSV`, arquivos `dados/usuarios.csv` e `dados/anuncios.csv`.
-- **Como:** No `Main`, se existirem os arquivos, são chamados `CarregadorCSV.carregarUsuarios(path)` e `CarregadorCSV.carregarAnuncios(path, ...)`. O carregador lê linha a linha (ignorando comentários `#`), faz o parse por `;` e preenche listas de usuários e anúncios e o mapa dono-do-anúncio. O CSV de anúncios suporta tipo de oferta, valores (venda/aluguel/temporada), área, descrição, suítes e bairro.
+- **Como:** Dados são povoados automaticamente a partir de arquivos CSV ao iniciar a aplicação, evitando digitações iniciais para testar o sistema. No `Main`, se existirem os arquivos, são chamados `CarregadorCSV.carregarUsuarios(path)` e `CarregadorCSV.carregarAnuncios(path, ...)`. Parse por `;`; suporte a tipo de oferta, valores, área, descrição, suítes, bairro.
 
-### E2 – Abstração de saída (evitar System.out no domínio)
+### E2 – Não usar System.out no domínio; fluxo de mensagens reutilizável
 
-- **Onde:** `saida/Saida`, `saida/ConsoleSaida`, uso em `Main` e em `NotificacaoInteressadosObserver`.
-- **Como:** A interface `Saida` define `escrever(String)` e `escreverSemQuebra(String)`. `ConsoleSaida` implementa com `System.out`. O `Main` e os observadores que precisam exibir mensagens recebem/referenciam `Saida`, permitindo trocar o canal de saída (console, log, UI) sem alterar o domínio.
+- **Onde:** `saida/Saida`, `saida/ConsoleSaida`; uso em `Main` e em `NotificacaoInteressadosObserver`.
+- **Como:** Não há chamadas a `System.out.println()` dentro de métodos do domínio. O fluxo de mensagens é exibido de forma reutilizável: interface `Saida` define `escrever(String)` e `escreverSemQuebra(String)`; `ConsoleSaida` implementa para console. `Main` e observadores usam `Saida`, facilitando troca por log ou UI sem alterar o domínio.
 
 ### Funcionalidades adicionais implementadas
 
@@ -352,6 +324,7 @@ myhome/
     │   ├── estado/
     │   ├── factory/
     │   ├── imovel/
+    │   ├── moderacao/
     │   ├── notificacao/
     │   ├── pagamento/
     │   ├── prototype/
