@@ -1,6 +1,6 @@
 # titulo;preco;tipo;endereco;idDono;tipoOferta;valorVenda;valorAluguel;valorTemporada;area;descricao;suites;bairro;extras...
 # tipoOferta = venda, aluguel, temporada
-# area = área em m². descricao = detalhes (evitar ;). suites = quantidade de suítes. bairro = bairro do imóvel
+# area = área em metros quadrados (m²). descricao = detalhes (evitar ;). suites = quantidade de suítes. bairro = bairro do imóvel
 # Bairros de exemplo: Jaguaribe, Castelo Branco, Bancários, Bessa, Tambaú, Altiplano
 # casa: extras = quintal (0 ou 1)
 # apartamento: extras = quartos;andar;elevador(0 ou 1)

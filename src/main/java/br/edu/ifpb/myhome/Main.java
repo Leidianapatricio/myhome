@@ -228,8 +228,7 @@ public class Main {
                 }
                 if (usuario != null) {
                     saida.escrever("\n--- Novo anúncio (por " + usuario.getNome() + ") ---");
-                        saida.escrever("Título do anúncio (não use palavras de baixo calão ou termos inadequados): ");
-                        saida.escreverSemQuebra("Título: ");
+                        saida.escreverSemQuebra("Título do anúncio (não pode conter palavras de baixo calão ou termos inadequados): ");
                         String titulo = sc.nextLine().trim();
                         saida.escrever("Tipo de oferta: 1=Venda 2=Aluguel 3=Temporada");
                         saida.escreverSemQuebra("Opção: ");
@@ -700,8 +699,8 @@ public class Main {
                         ServicoModeracao servicoMod = new ServicoModeracao();
                         ResultadoModeracao res = servicoMod.validarRegras(a);
                         if (res.isAprovado()) {
-                            a.submeter();
-                            saida.escrever("Anúncio enviado para moderação. Aguarde aprovação para publicação.");
+                            a.setEstado(new AtivoState());
+                            saida.escrever("Anúncio aprovado e publicado (moderação automática).");
                         } else {
                             saida.escrever("Anúncio não aprovado na validação automática:");
                             for (String err : res.getErros()) saida.escrever("  - " + err);
@@ -821,7 +820,7 @@ public class Main {
         saida.escrever("Tipo: " + a.getTipoImovel() + " | Oferta: " + a.getTipoOferta().getLabel());
         saida.escrever("Venda: " + FormatadorMoeda.formatarReal(a.getValorVenda()) + " | Aluguel: " + FormatadorMoeda.formatarReal(a.getValorAluguel()) + "/mês | Temporada: " + FormatadorMoeda.formatarReal(a.getValorTemporada()) + "/diária");
         if (a.getImovel() != null) {
-            saida.escrever("Área: " + a.getImovel().getAreaMetrosQuadrados() + " m² | Suítes: " + a.getImovel().getQuantidadeSuites());
+            saida.escrever("Área: " + a.getImovel().getAreaMetrosQuadrados() + " m² (metros quadrados) | Suítes: " + a.getImovel().getQuantidadeSuites());
             String descricao = a.getImovel().getDescricao();
             saida.escrever("Descrição: " + (descricao != null && !descricao.isEmpty() ? descricao : "(não informada)"));
         }
