@@ -1,6 +1,8 @@
 # MyHome
 
-Plataforma de classificados imobiliários em Java: anúncios (venda/aluguel/temporada), busca avançada, chat e confirmação de pagamento. Usa padrões de projeto (State, Observer, Factory, Prototype, Mediator, etc.).
+Plataforma de classificados imobiliários com anúncios (venda, aluguel e temporada), busca avançada, chat e confirmação de pagamento.
+
+Conecta **anunciantes** (proprietários, corretores) e **interessados** (compradores e locatários). Dados iniciais via CSV e configuração em `config.properties`.
 
 **IFPB · Padrões de Projeto (5º período) · Prof. Alex Sandro da Cunha Rêgo**  
 **Equipe:** Felipe Cartaxo, Leidiana Patrício e Matheus Barbosa
