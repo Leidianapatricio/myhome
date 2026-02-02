@@ -3,13 +3,12 @@ package br.edu.ifpb.myhome.anuncio;
 import br.edu.ifpb.myhome.estado.EstadoAnuncio;
 import br.edu.ifpb.myhome.estado.RascunhoState;
 import br.edu.ifpb.myhome.imovel.Imovel;
-import br.edu.ifpb.myhome.moderacao.ResultadoModeracao;
-import br.edu.ifpb.myhome.moderacao.ServicoModeracao;
 import br.edu.ifpb.myhome.notificacao.Observer;
 import br.edu.ifpb.myhome.notificacao.TipoEvento;
 import br.edu.ifpb.myhome.usuario.Usuario;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Anuncio {
@@ -19,8 +18,6 @@ public class Anuncio {
     private double preco;
     private Imovel imovel;
     private EstadoAnuncio estado;
-    private TipoOferta tipoOferta;
-    private double valorVenda;
     private double valorAluguel;
     private double valorTemporada;
     /** RF03 - Quantidade de fotos do anúncio (regra: mínimo 1 foto OU descrição com tamanho mínimo). */
@@ -28,21 +25,28 @@ public class Anuncio {
     /** Dono/anunciante do anúncio (para notificação: e-mail, etc.). */
     private Usuario dono;
     private List<Observer> observers = new ArrayList<>();
-    private final InteressadosAnuncio interessados = new InteressadosAnuncio();
+    private final List<Usuario> interessados = new ArrayList<>();
 
     public Anuncio() {
         this.estado = new RascunhoState();
-        this.tipoOferta = TipoOferta.VENDA;
+        
     }
 
-    public Anuncio(String titulo, double preco, Imovel imovel) {
+    public Anuncio(String titulo,
+            double preco,
+            Imovel imovel,
+            double valorAluguel,
+            double valorTemporada) {
+
         this.titulo = titulo;
         this.preco = preco;
-        this.valorVenda = preco;
         this.imovel = imovel;
+        this.valorAluguel = valorAluguel;
+        this.valorTemporada = valorTemporada;
+
         this.estado = new RascunhoState();
-        this.tipoOferta = TipoOferta.VENDA;
-    }
+}
+
 
     /** Chama o state: delega ao estado atual a transição (Rascunho → Moderação). */
     public boolean submeter() {
@@ -53,37 +57,16 @@ public class Anuncio {
         return false;
     }
 
-    /**
-     * Método que orquestra a submissão para publicação: valida (moderação) e chama o state
-     * para transicionar (Rascunho → Moderação → Ativo ou Suspenso). O cliente (Main) só chama este método.
-     */
-    public ResultadoModeracao submeterParaPublicacao() {
-        ServicoModeracao servico = new ServicoModeracao();
-        ResultadoModeracao res = servico.validarRegras(this);
-        if (res.isAprovado()) {
-            submeter();
-            aplicarResultadoModeracao(true);
-        }
-        return res;
-    }
-
-    /** Padrão State: delega ao estado a decisão Ativo vs Suspenso (após moderação). */
-    public void aplicarResultadoModeracao(boolean aprovado) {
-        if (estado != null) estado.aplicarResultadoModeracao(this, aprovado);
-    }
-
-    /** Padrão State: delega ao estado a transição para Arquivado (confirmar pagamento). */
-    public void confirmarPagamento() {
-        if (estado != null) estado.confirmarPagamento(this);
-    }
-
     /** Padrão State: delega ao estado a ativação direta (ex.: anúncios carregados do CSV). */
     public void ativar() {
         if (estado != null) estado.ativar(this);
     }
 
+    /** Padrão State: altera o estado e registra no log; usado pelas implementações de EstadoAnuncio. */
     public void mudarEstado(EstadoAnuncio e) {
+        EstadoAnuncio estadoAnterior = this.estado;
         this.estado = e;
+        notificar(TipoEvento.MUDANCA_ESTADO);
     }
 
     public void adicionarObserver(Observer o) {
@@ -106,21 +89,17 @@ public class Anuncio {
         }
     }
 
-    public void setEstado(EstadoAnuncio estado) {
-        EstadoAnuncio estadoAnterior = this.estado;
-        this.estado = estado;
-        LogMudancaEstado.getInstancia().registrar(this, estadoAnterior, estado);
-        notificar(TipoEvento.MUDANCA_ESTADO);
-    }
-
+    
     /** Registra usuário interessado (ex.: quem abriu conversa sobre o anúncio) e notifica. */
     public void adicionarInteressado(Usuario u) {
-        interessados.adicionar(u);
+        if (u != null && !interessados.contains(u)) {
+            interessados.add(u);
+        }
         notificar(TipoEvento.NOVO_INTERESSADO);
     }
 
     public List<Usuario> getInteressados() {
-        return interessados.getInteressados();
+        return Collections.unmodifiableList(interessados);
     }
 
     public Usuario getDono() {
@@ -144,20 +123,7 @@ public class Anuncio {
         return preco;
     }
 
-    public void setPreco(double preco) {
-        this.preco = preco;
-        this.valorVenda = preco;
-        notificar(TipoEvento.PRECO_ALTERADO);
-    }
-
-    public TipoOferta getTipoOferta() { return tipoOferta; }
-    public void setTipoOferta(TipoOferta tipoOferta) { this.tipoOferta = tipoOferta != null ? tipoOferta : TipoOferta.VENDA; }
-    public double getValorVenda() { return valorVenda; }
-    public void setValorVenda(double valorVenda) {
-        this.valorVenda = valorVenda;
-        this.preco = valorVenda;
-        notificar(TipoEvento.PRECO_ALTERADO);
-    }
+    
     public double getValorAluguel() { return valorAluguel; }
     public void setValorAluguel(double valorAluguel) {
         this.valorAluguel = valorAluguel;

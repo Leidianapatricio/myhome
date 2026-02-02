@@ -10,15 +10,15 @@ public class ModeracaoState implements EstadoAnuncio {
 
     @Override
     public void proximo(Anuncio anuncio) {
-        anuncio.setEstado(new AtivoState());
+        anuncio.mudarEstado(new AtivoState());
     }
 
     @Override
     public void aplicarResultadoModeracao(Anuncio anuncio, boolean aprovado) {
         if (aprovado) {
-            anuncio.setEstado(new AtivoState());
+            anuncio.mudarEstado(new AtivoState());
         } else {
-            anuncio.setEstado(new SuspensoState());
+            anuncio.mudarEstado(new SuspensoState());
         }
     }
 

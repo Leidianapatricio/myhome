@@ -1,7 +1,6 @@
 package br.edu.ifpb.myhome.moderacao;
 
 import br.edu.ifpb.myhome.anuncio.Anuncio;
-import br.edu.ifpb.myhome.anuncio.TipoOferta;
 import br.edu.ifpb.myhome.config.Configuracao;
 
 import java.util.ArrayList;
@@ -49,20 +48,9 @@ public class ServicoModeracao {
             }
         }
 
-        // Regra: preço condizente conforme tipo de oferta (mínimo; evita zero, um real, valores sem sentido)
+        // Regra: preço condizente (mínimo; evita zero, um real, valores sem sentido)
         double precoMin = config.getPrecoMinimoModeracao();
-        double valor;
-        switch (anuncio.getTipoOferta() != null ? anuncio.getTipoOferta() : TipoOferta.VENDA) {
-            case ALUGUEL:
-                valor = anuncio.getValorAluguel();
-                break;
-            case TEMPORADA:
-                valor = anuncio.getValorTemporada();
-                break;
-            default:
-                valor = anuncio.getValorVenda() > 0 ? anuncio.getValorVenda() : anuncio.getPreco();
-                break;
-        }
+        double valor = anuncio.getPreco();
         if (valor <= 0) {
             erros.add("Preço deve ser maior que zero.");
         } else if (valor < precoMin) {
@@ -82,5 +70,18 @@ public class ServicoModeracao {
         }
 
         return new ResultadoModeracao(erros.isEmpty(), erros);
+    }
+
+    /**
+     * Valida o anúncio e aplica o resultado (transição de estado: Rascunho → Moderação → Ativo ou Suspenso).
+     * O cliente chama apenas este método em vez de submeterParaPublicacao/aplicarResultadoModeracao no Anuncio.
+     */
+    public ResultadoModeracao validar(Anuncio anuncio) {
+        ResultadoModeracao res = validarRegras(anuncio);
+        if (anuncio != null) {
+            anuncio.submeter();
+            anuncio.getEstado().aplicarResultadoModeracao(anuncio, res.isAprovado());
+        }
+        return res;
     }
 }

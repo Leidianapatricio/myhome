@@ -10,7 +10,7 @@ public class SuspensoState implements EstadoAnuncio {
 
     @Override
     public void proximo(Anuncio anuncio) {
-        anuncio.setEstado(new RascunhoState());
+        anuncio.mudarEstado(new RascunhoState());
     }
 
     @Override

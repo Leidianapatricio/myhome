@@ -9,12 +9,12 @@ public class RascunhoState implements EstadoAnuncio {
 
     @Override
     public void proximo(Anuncio anuncio) {
-        anuncio.setEstado(new ModeracaoState());
+        anuncio.mudarEstado(new ModeracaoState());
     }
 
     @Override
     public void ativar(Anuncio anuncio) {
-        anuncio.setEstado(new AtivoState());
+        anuncio.mudarEstado(new AtivoState());
     }
 
     @Override

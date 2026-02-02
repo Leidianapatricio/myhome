@@ -25,7 +25,7 @@ Conecta **anunciantes** (proprietários, corretores) e **interessados** (comprad
 | **RF01** | Criação de anúncios (tipos, processo guiado, título/tipo/preço obrigatórios) | `Main`, `usuario/`, `anuncio/`, `imovel/`, `validacao/` (Chain of Responsibility), `factory/` |
 | **RF02** | Instâncias padrão (casa 80 m², apartamento 60 m² 2 quartos, terreno 200 m²) | Subclasses de Imovel (Casa, Apartamento, Terreno) são os protótipos – implementam `ImovelPrototype` e `clone()`; `prototype/ImovelPrototypeRegistry` registra instâncias padrão |
 | **RF03** | Publicação e moderação (título e descrição não podem ter palavras de baixo calão/termos proibidos; preço mínimo; descrição/fotos mínimos) | `moderacao/ServicoModeracao`, `ResultadoModeracao`; `config.properties`; opção 11 no menu |
-| **RF04** | Ciclo de vida (Rascunho, Moderação, Ativo, Arquivado, Suspenso); notificação e log ao mudar estado | `estado/` (State), `LogMudancaEstado`, `Anuncio.setEstado` → log + notificar() |
+| **RF04** | Ciclo de vida (Rascunho, Moderação, Ativo, Arquivado, Suspenso); notificação ao mudar estado | `estado/` (State), `Anuncio.mudarEstado` → notificar() |
 | **RF05** | Notificação (canal flexível; e-mail implementado) | `notificacao/` – Observer, `EmailAdapter`, `ServicoNotificacaoExterno` |
 | **RF06** | Busca avançada (preço, localização, área, quartos; filtros combinados; extensível) | `busca/` – `BuscaService`, `FiltroBusca` e implementações (Tipo, Bairro, Preço, Área, Quartos, Título) |
 | **RF07** | Configuração centralizada | `config/Configuracao` (Singleton), `config.properties` |
@@ -56,7 +56,7 @@ Conecta **anunciantes** (proprietários, corretores) e **interessados** (comprad
 
 | Pacote | Classes principais |
 |--------|---------------------|
-| `anuncio` | Anuncio, LogMudancaEstado, TipoOferta, InteressadosAnuncio |
+| `anuncio` | Anuncio |
 | `busca` | BuscaService, FiltroBusca, FiltroTipoImovel, FiltroBairro, FiltroPreco, FiltroArea, FiltroQuartos, FiltroTitulo |
 | `chat` | ChatMediator, Conversa, Mensagem |
 | `compra` | Compra, SolicitacaoCompra |

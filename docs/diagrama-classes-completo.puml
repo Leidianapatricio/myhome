@@ -6,32 +6,31 @@ skinparam packageStyle rectangle
 skinparam classAttributeIconSize 0
 
 ' ==================== ANÚNCIO ====================
+' Moderação: ServicoModeracao.validar(anuncio)
+' Confirmar pagamento: ServicoPagamento.confirmar(anuncio, formaPagamento)
 package "anuncio" {
   class Anuncio {
     - titulo: String
     - preco: double
     - imovel: Imovel
     - estado: EstadoAnuncio
-    - tipoOferta: TipoOferta
     - valorVenda: double
     - valorAluguel: double
     - valorTemporada: double
     - quantidadeFotos: int
     - dono: Usuario
     - observers: List<Observer>
-    - interessados: InteressadosAnuncio
+    - interessados: List<Usuario>
     + Anuncio()
     + Anuncio(titulo: String, preco: double, imovel: Imovel)
+    + Anuncio(titulo: String, imovel: Imovel, valorAluguel: double, valorTemporada: double)
+    + Anuncio(titulo: String, valorVenda: double, imovel: Imovel, valorAluguel: double, valorTemporada: double)
     + submeter(): boolean
-    + submeterParaPublicacao(): ResultadoModeracao
-    + aplicarResultadoModeracao(aprovado: boolean): void
-    + confirmarPagamento(): void
     + ativar(): void
     + mudarEstado(e: EstadoAnuncio): void
     + adicionarObserver(o: Observer): void
     + removerObserver(o: Observer): void
     + notificar(evento: TipoEvento): void
-    + setEstado(estado: EstadoAnuncio): void
     + adicionarInteressado(u: Usuario): void
     + getInteressados(): List<Usuario>
     + getDono(): Usuario
@@ -39,13 +38,8 @@ package "anuncio" {
     + getTitulo(): String
     + setTitulo(titulo: String): void
     + getPreco(): double
-    + setPreco(preco: double): void
-    + getTipoOferta(): TipoOferta
-    + setTipoOferta(tipoOferta: TipoOferta): void
     + getValorVenda(): double
-    + setValorVenda(valorVenda: double): void
     + getValorAluguel(): double
-    + setValorAluguel(valorAluguel: double): void
     + getValorTemporada(): double
     + setValorTemporada(valorTemporada: double): void
     + getImovel(): Imovel
@@ -56,38 +50,6 @@ package "anuncio" {
     + getQuantidadeFotos(): int
     + setQuantidadeFotos(quantidadeFotos: int): void
   }
-  enum TipoOferta {
-    VENDA
-    ALUGUEL
-    TEMPORADA
-  }
-  class InteressadosAnuncio {
-    - interessados: List<Usuario>
-    + adicionar(u: Usuario): void
-    + getInteressados(): List<Usuario>
-  }
-  class LogMudancaEstado <<Singleton>> {
-    - entradas: List<EntradaLogEstado>
-    - {static} instancia: LogMudancaEstado
-    + {static} getInstancia(): LogMudancaEstado
-    + registrar(anuncio: Anuncio, estadoAnterior: EstadoAnuncio, estadoNovo: EstadoAnuncio): void
-    + getEntradas(): List<EntradaLogEstado>
-  }
-  class EntradaLogEstado {
-    - tituloAnuncio: String
-    - estadoAnterior: String
-    - estadoNovo: String
-    - dataHora: LocalDateTime
-    + EntradaLogEstado(tituloAnuncio: String, estadoAnterior: String, estadoNovo: String)
-    + getTituloAnuncio(): String
-    + getEstadoAnterior(): String
-    + getEstadoNovo(): String
-    + getDataHora(): LocalDateTime
-    + toString(): String
-  }
-  LogMudancaEstado *-- EntradaLogEstado
-  Anuncio "1" *-- "1" InteressadosAnuncio
-  Anuncio --> TipoOferta
 }
 
 ' ==================== ESTADO (State) ====================
@@ -133,7 +95,6 @@ package "estado" {
   EstadoAnuncio <|.. ArquivadoState
 }
 Anuncio --> EstadoAnuncio : estado
-Anuncio ..> LogMudancaEstado : registrar
 
 ' ==================== IMÓVEL (Casa, Apartamento, Terreno são Prototype) ====================
 package "imovel" {
@@ -364,7 +325,7 @@ package "usuario" {
   }
 }
 Anuncio ..> Usuario : dono
-InteressadosAnuncio --> Usuario : lista
+Anuncio "1" o-- "*" Usuario : interessados
 
 ' ==================== CHAT (Mediator) ====================
 package "chat" {
@@ -457,11 +418,20 @@ package "pagamento" {
     + processar(valor: double): String
   }
   class ServicoPagamento {
-    + processarPagamento(valor: double, forma: FormaPagamento): String
+    - formaPagamento: FormaPagamento
+    + ServicoPagamento(formaPagamento: FormaPagamento)
+    + setFormaPagamento(formaPagamento: FormaPagamento): void
+    + pagar(valor: double): String
+    + confirmar(anuncio: Anuncio, formaPagamento: FormaPagamento): void
+    + assinarPlano(plano: PlanoAssinatura): String
   }
   enum PlanoAssinatura {
     BASICO
     PREMIUM
+    ILIMITADO
+    + getNome(): String
+    + getValorMensal(): double
+    + getBeneficios(): String
   }
   FormaPagamento <|.. PagamentoCartao
   FormaPagamento <|.. PagamentoPix
@@ -562,6 +532,7 @@ package "moderacao" {
   class ServicoModeracao {
     - config: Configuracao
     + validarRegras(anuncio: Anuncio): ResultadoModeracao
+    + validar(anuncio: Anuncio): ResultadoModeracao
   }
   class ResultadoModeracao {
     - aprovado: boolean

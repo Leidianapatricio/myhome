@@ -1,7 +1,6 @@
 package br.edu.ifpb.myhome.csv;
 
 import br.edu.ifpb.myhome.anuncio.Anuncio;
-import br.edu.ifpb.myhome.anuncio.TipoOferta;
 import br.edu.ifpb.myhome.imovel.Apartamento;
 import br.edu.ifpb.myhome.imovel.Casa;
 import br.edu.ifpb.myhome.imovel.Imovel;
@@ -18,8 +17,8 @@ import java.util.Map;
 /**
  * E1 - Carrega dados iniciais a partir de arquivos CSV para testes.
  * usuarios.csv: nome;email (uma linha por usuário)
- * anuncios.csv: titulo;preco;tipo;endereco;idDono;tipoOferta;valorVenda;valorAluguel;valorTemporada;area;descricao;suites;extras...
- *   tipoOferta = venda, aluguel, temporada. area = m². extras: casa=quintal(0/1), apartamento=quartos;andar;elevador(0/1)
+ * anuncios.csv: titulo;preco;tipo;endereco;idDono;valorVenda;valorAluguel;valorTemporada;area;descricao;suites;bairro;extras...
+ *   area = m². extras: casa=quintal(0/1), apartamento=quartos;andar;elevador(0/1)
  */
 public class CarregadorCSV {
 
@@ -41,7 +40,7 @@ public class CarregadorCSV {
         return lista;
     }
 
-    /** Formato: titulo;preco;tipo;endereco;idDono;tipoOferta;valorVenda;valorAluguel;valorTemporada;area;descricao;suites;extras... (idDono = 1-based) */
+    /** Formato: titulo;preco;tipo;endereco;idDono;valorVenda;valorAluguel;valorTemporada;area;descricao;suites;bairro;extras... (idDono = 1-based) */
     public static void carregarAnuncios(Path arquivo, List<Usuario> usuarios,
                                         List<Anuncio> anuncios, Map<Anuncio, Usuario> donoDoAnuncio) throws IOException {
         List<String> linhas = Files.readAllLines(arquivo);
@@ -56,40 +55,26 @@ public class CarregadorCSV {
             String endereco = parts[3].trim();
             int idDono = parseInt(parts[4].trim(), 1);
             if (titulo.isEmpty() || idDono < 1 || idDono > usuarios.size()) continue;
-            TipoOferta tipoOferta = parseTipoOferta(parts.length > 5 ? parts[5].trim() : "venda");
-            double valorVenda = parts.length > 6 ? parseDouble(parts[6].trim(), preco) : preco;
-            double valorAluguel = parts.length > 7 ? parseDouble(parts[7].trim(), 0) : 0;
-            double valorTemporada = parts.length > 8 ? parseDouble(parts[8].trim(), 0) : 0;
-            double area = parts.length > 9 ? parseDouble(parts[9].trim(), 0) : 0;
-            String descricao = parts.length > 10 ? parts[10].trim() : "";
-            int suites = parts.length > 11 ? parseInt(parts[11].trim(), 0) : 0;
-            String bairro = parts.length > 12 ? parts[12].trim() : "";
+            double valorVenda = parts.length > 5 ? parseDouble(parts[5].trim(), preco) : preco;
+            double valorAluguel = parts.length > 6 ? parseDouble(parts[6].trim(), 0) : 0;
+            double valorTemporada = parts.length > 7 ? parseDouble(parts[7].trim(), 0) : 0;
+            double area = parts.length > 8 ? parseDouble(parts[8].trim(), 0) : 0;
+            String descricao = parts.length > 9 ? parts[9].trim() : "";
+            int suites = parts.length > 10 ? parseInt(parts[10].trim(), 0) : 0;
+            String bairro = parts.length > 11 ? parts[11].trim() : "";
             Usuario dono = usuarios.get(idDono - 1);
             Imovel imovel = criarImovel(tipo, endereco, preco, area, descricao, suites, bairro, parts);
-            Anuncio anuncio = new Anuncio(titulo, valorVenda, imovel);
-            anuncio.setTipoOferta(tipoOferta);
-            anuncio.setValorVenda(valorVenda);
-            anuncio.setValorAluguel(valorAluguel);
-            anuncio.setValorTemporada(valorTemporada);
+            Anuncio anuncio = new Anuncio(titulo, preco, imovel, valorAluguel, valorTemporada);
             anuncio.setDono(dono);
             anuncios.add(anuncio);
             donoDoAnuncio.put(anuncio, dono);
         }
     }
 
-    private static TipoOferta parseTipoOferta(String s) {
-        if (s == null) return TipoOferta.VENDA;
-        switch (s.toLowerCase()) {
-            case "aluguel": return TipoOferta.ALUGUEL;
-            case "temporada": return TipoOferta.TEMPORADA;
-            default: return TipoOferta.VENDA;
-        }
-    }
-
-    /** extras: bairro=parts[12]; casa=parts[13]=quintal, apartamento=parts[13]=quartos, parts[14]=andar, parts[15]=elevador */
+    /** extras: bairro=parts[11]; casa=parts[12]=quintal, apartamento=parts[12]=quartos, parts[13]=andar, parts[14]=elevador */
     private static Imovel criarImovel(String tipo, String endereco, double preco,
                                       double area, String descricao, int suites, String bairro, String[] parts) {
-        int base = 13; // índice dos extras após ...;suites;bairro
+        int base = 12; // índice dos extras após ...;suites;bairro
         switch (tipo) {
             case "casa":
                 boolean quintal = parts.length > base && ("1".equals(parts[base].trim()) || "s".equalsIgnoreCase(parts[base].trim()));

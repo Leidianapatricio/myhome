@@ -10,12 +10,12 @@ public class AtivoState implements EstadoAnuncio {
 
     @Override
     public void proximo(Anuncio anuncio) {
-        anuncio.setEstado(new ArquivadoState());
+        anuncio.mudarEstado(new ArquivadoState());
     }
 
     @Override
     public void confirmarPagamento(Anuncio anuncio) {
-        anuncio.setEstado(new ArquivadoState());
+        anuncio.mudarEstado(new ArquivadoState());
     }
 
     @Override

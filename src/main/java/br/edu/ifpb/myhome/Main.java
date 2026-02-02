@@ -10,8 +10,6 @@ import java.util.Map;
 import java.util.Scanner;
 
 import br.edu.ifpb.myhome.anuncio.Anuncio;
-import br.edu.ifpb.myhome.anuncio.LogMudancaEstado;
-import br.edu.ifpb.myhome.anuncio.TipoOferta;
 import br.edu.ifpb.myhome.busca.BuscaService;
 import br.edu.ifpb.myhome.busca.FiltroArea;
 import br.edu.ifpb.myhome.busca.FiltroBusca;
@@ -139,7 +137,6 @@ public class Main {
             saida.escrever("5 - Buscar imóveis / visualizar / favoritar / comprar anúncio");
             saida.escrever("6 - Chat (conversar sobre anúncio)");
             saida.escrever("7 - Listar compras");
-            saida.escrever("8 - Consultar log de mudanças de estado");
             saida.escrever("0 - Sair");
             saida.escreverSemQuebra("Opção: ");
             try {
@@ -227,11 +224,6 @@ public class Main {
                     saida.escrever("\n--- Novo anúncio (por " + usuario.getNome() + ") ---");
                         saida.escreverSemQuebra("Título do anúncio (não pode conter palavras de baixo calão ou termos inadequados): ");
                         String titulo = sc.nextLine().trim();
-                        saida.escrever("Tipo de oferta: 1=Venda 2=Aluguel 3=Temporada");
-                        saida.escreverSemQuebra("Opção: ");
-                        int tipoOfertaOp;
-                        try { tipoOfertaOp = Integer.parseInt(sc.nextLine().trim()); } catch (NumberFormatException e) { tipoOfertaOp = 1; }
-                        TipoOferta tipoOferta = tipoOfertaOp == 2 ? TipoOferta.ALUGUEL : (tipoOfertaOp == 3 ? TipoOferta.TEMPORADA : TipoOferta.VENDA);
                         saida.escreverSemQuebra("Valor venda (R$): ");
                         double valorVenda = lerDouble(sc, 0);
                         saida.escreverSemQuebra("Valor aluguel (R$/mês): ");
@@ -278,11 +270,8 @@ public class Main {
                             }
                             saida.escreverSemQuebra("Quantidade de fotos do anúncio (RF03): ");
                             int quantidadeFotos = Math.max(0, lerInt(sc, 0));
-                            Anuncio anuncio = new Anuncio(titulo, valorVenda, imovel);
+                            Anuncio anuncio = new Anuncio(titulo, valorVenda, imovel, valorAluguel, valorTemporada);
                             anuncio.setQuantidadeFotos(quantidadeFotos);
-                            anuncio.setTipoOferta(tipoOferta);
-                            anuncio.setValorAluguel(valorAluguel);
-                            anuncio.setValorTemporada(valorTemporada);
                             ValidadorAnuncio validador = ValidadorChainFactory.criarCadeiaPadrao();
                             ResultadoValidacao resValidacao = validador.validar(anuncio);
                             if (resValidacao.isValido()) {
@@ -292,7 +281,7 @@ public class Main {
                                 usuario.editarAnuncio(anuncio);
                                 anuncios.add(anuncio);
                                 donoDoAnuncio.put(anuncio, usuario);
-                                saida.escrever("Anúncio criado (rascunho): " + anuncio.getTitulo() + " | " + anuncio.getTipoOferta().getLabel() + " | Venda: " + FormatadorMoeda.formatarReal(anuncio.getValorVenda()) + " | " + anuncio.getImovel().getAreaMetrosQuadrados() + " m² | " + anuncio.getImovel().getQuantidadeSuites() + " suítes");
+                                saida.escrever("Anúncio criado (rascunho): " + anuncio.getTitulo() + " | Venda: " + FormatadorMoeda.formatarReal(anuncio.getPreco()) + " | " + anuncio.getImovel().getAreaMetrosQuadrados() + " m² | " + anuncio.getImovel().getQuantidadeSuites() + " suítes");
                                 saida.escrever("Use a opção 'Submeter anúncio' no menu para enviar à moderação e publicar.");
                                 pausarParaContinuar(saida, sc);
                             } else {
@@ -415,7 +404,7 @@ public class Main {
                                         saida.escreverSemQuebra("Opção: ");
                                         int formaOp = lerInt(sc, 1);
                                         FormaPagamento forma = formaOp == 2 ? new PagamentoPix() : (formaOp == 3 ? new PagamentoBoleto() : new PagamentoCartao());
-                                        double valor = anuncioCompra.getTipoOferta() == TipoOferta.ALUGUEL ? anuncioCompra.getValorAluguel() : (anuncioCompra.getTipoOferta() == TipoOferta.TEMPORADA ? anuncioCompra.getValorTemporada() : anuncioCompra.getValorVenda());
+                                        double valor = anuncioCompra.getPreco();
                                         ServicoPagamento servicoPagamento = new ServicoPagamento(forma);
                                         saida.escrever(servicoPagamento.pagar(valor));
                                         saida.escrever("Executar pagamento? (s/n): ");
@@ -461,7 +450,7 @@ public class Main {
                                             saida.escreverSemQuebra("Opção: ");
                                             int formaOp = lerInt(sc, 1);
                                             FormaPagamento forma = formaOp == 2 ? new PagamentoPix() : (formaOp == 3 ? new PagamentoBoleto() : new PagamentoCartao());
-                                            double valor = a.getTipoOferta() == TipoOferta.ALUGUEL ? a.getValorAluguel() : (a.getTipoOferta() == TipoOferta.TEMPORADA ? a.getValorTemporada() : a.getValorVenda());
+                                            double valor = a.getPreco();
                                             ServicoPagamento servicoPagamento = new ServicoPagamento(forma);
                                             saida.escrever(servicoPagamento.pagar(valor));
                                             saida.escrever("Executar pagamento? (s/n): ");
@@ -525,8 +514,9 @@ public class Main {
                                     SolicitacaoCompra s = pendentesDoVendedor.get(is - 1);
                                     solicitacoesPendentes.remove(s);
                                     compras.add(new Compra(s.getComprador(), s.getAnuncio()));
-                                    s.getAnuncio().confirmarPagamento();
-                                    saida.escrever("Pagamento confirmado. Imóvel marcado como " + (s.getAnuncio().getTipoOferta() == TipoOferta.ALUGUEL ? "alugado" : s.getAnuncio().getTipoOferta() == TipoOferta.TEMPORADA ? "alugado (temporada)" : "vendido") + ". Anúncio arquivado.");
+                                    ServicoPagamento servicoPagamento = new ServicoPagamento(s.getFormaPagamento());
+                                    servicoPagamento.confirmar(s.getAnuncio(), s.getFormaPagamento());
+                                    saida.escrever("Pagamento confirmado. Anúncio arquivado.");
                                     pausarParaContinuar(saida, sc);
                                 } else {
                                     saida.escrever("Solicitação inválida.");
@@ -662,17 +652,6 @@ public class Main {
                     }
                 }
                 pausarParaContinuar(saida, sc);
-            } else if (opcao == 8) {
-                saida.escrever("\n--- Log de mudanças de estado ---");
-                List<LogMudancaEstado.EntradaLogEstado> entradas = LogMudancaEstado.getInstancia().getEntradas();
-                if (entradas.isEmpty()) {
-                    saida.escrever("Nenhuma mudança de estado registrada.");
-                } else {
-                    for (LogMudancaEstado.EntradaLogEstado e : entradas) {
-                        saida.escrever(e.toString());
-                    }
-                }
-                pausarParaContinuar(saida, sc);
             } else if (opcao == 0) {
                 saida.escrever("Até logo.");
             } else {
@@ -779,8 +758,8 @@ public class Main {
 
     private static void detalhesAnuncio(Saida saida, Anuncio a) {
         saida.escrever("--- " + a.getTitulo() + " ---");
-        saida.escrever("Tipo: " + a.getTipoImovel() + " | Oferta: " + a.getTipoOferta().getLabel());
-        saida.escrever("Venda: " + FormatadorMoeda.formatarReal(a.getValorVenda()) + " | Aluguel: " + FormatadorMoeda.formatarReal(a.getValorAluguel()) + "/mês | Temporada: " + FormatadorMoeda.formatarReal(a.getValorTemporada()) + "/diária");
+        saida.escrever("Tipo: " + a.getTipoImovel());
+        saida.escrever("Venda: " + FormatadorMoeda.formatarReal(a.getPreco()) + " | Aluguel: " + FormatadorMoeda.formatarReal(a.getValorAluguel()) + "/mês | Temporada: " + FormatadorMoeda.formatarReal(a.getValorTemporada()) + "/diária");
         if (a.getImovel() != null) {
             saida.escrever("Área: " + a.getImovel().getAreaMetrosQuadrados() + " m² (metros quadrados) | Suítes: " + a.getImovel().getQuantidadeSuites());
             String descricao = a.getImovel().getDescricao();

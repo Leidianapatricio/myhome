@@ -14,18 +14,21 @@ public class SolicitacaoCompra {
 
     private final Usuario comprador;
     private final Anuncio anuncio;
+    private final FormaPagamento formaPagamento;
     private final String formaPagamentoNome;
     private final LocalDateTime data;
 
     public SolicitacaoCompra(Usuario comprador, Anuncio anuncio, FormaPagamento formaPagamento) {
         this.comprador = comprador;
         this.anuncio = anuncio;
+        this.formaPagamento = formaPagamento;
         this.formaPagamentoNome = formaPagamento != null ? formaPagamento.getNome() : "";
         this.data = LocalDateTime.now();
     }
 
     public Usuario getComprador() { return comprador; }
     public Anuncio getAnuncio() { return anuncio; }
+    public FormaPagamento getFormaPagamento() { return formaPagamento; }
     public String getFormaPagamentoNome() { return formaPagamentoNome; }
     public LocalDateTime getData() { return data; }
 }
