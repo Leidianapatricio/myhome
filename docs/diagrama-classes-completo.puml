@@ -1,0 +1,338 @@
+@startuml diagrama-classes-myhome
+!theme plain
+title MyHome – Diagrama de classes (todas as classes principais)
+
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+' ========== ANÚNCIO ==========
+package "anuncio" {
+  class Anuncio {
+    - titulo: String
+    - preco: double
+    - imovel: Imovel
+    - estado: EstadoAnuncio
+    - tipoOferta: TipoOferta
+    - valorVenda: double
+    - valorAluguel: double
+    - valorTemporada: double
+    - quantidadeFotos: int
+    - observers: List<Observer>
+    - interessados: InteressadosAnuncio
+    + submeter(): boolean
+    + setEstado(EstadoAnuncio): void
+    + adicionarObserver(Observer): void
+    + notificar(): void
+    + getEstadoAtual(): String
+  }
+  enum TipoOferta {
+    VENDA
+    ALUGUEL
+    TEMPORADA
+  }
+  class InteressadosAnuncio {
+    - interessados: List<Usuario>
+    + adicionar(Usuario): void
+    + getInteressados(): List<Usuario>
+  }
+  class LogMudancaEstado <<Singleton>> {
+    - entradas: List<EntradaLogEstado>
+    - {static} instancia: LogMudancaEstado
+    + {static} getInstancia(): LogMudancaEstado
+    + registrar(Anuncio, EstadoAnuncio, EstadoAnuncio): void
+  }
+  class "EntradaLogEstado" as EntradaLogEstado {
+    - tituloAnuncio: String
+    - estadoAnterior: String
+    - estadoNovo: String
+    - dataHora: LocalDateTime
+  }
+  LogMudancaEstado *-- EntradaLogEstado
+  Anuncio "1" *-- "1" InteressadosAnuncio
+  Anuncio --> TipoOferta
+}
+
+' ========== ESTADO (State) ==========
+package "estado" {
+  interface EstadoAnuncio {
+    + proximo(Anuncio): void
+    + getNome(): String
+  }
+  class RascunhoState
+  class ModeracaoState
+  class AtivoState
+  class SuspensoState
+  class VendidoState
+  class ArquivadoState
+  EstadoAnuncio <|.. RascunhoState
+  EstadoAnuncio <|.. ModeracaoState
+  EstadoAnuncio <|.. AtivoState
+  EstadoAnuncio <|.. SuspensoState
+  EstadoAnuncio <|.. VendidoState
+  EstadoAnuncio <|.. ArquivadoState
+}
+Anuncio --> EstadoAnuncio : estado
+Anuncio ..> LogMudancaEstado : registrar
+
+' ========== IMÓVEL ==========
+package "imovel" {
+  abstract class Imovel {
+    - endereco: String
+    - bairro: String
+    - preco: double
+    - areaMetrosQuadrados: double
+    - descricao: String
+    - quantidadeSuites: int
+    + {abstract} calcularValor(): double
+  }
+  class Casa
+  class Apartamento
+  class Terreno
+  class SalaComercial
+  class Galpao
+  Imovel <|-- Casa
+  Imovel <|-- Apartamento
+  Imovel <|-- Terreno
+  Imovel <|-- SalaComercial
+  Imovel <|-- Galpao
+}
+Anuncio --> Imovel : imovel
+
+' ========== FACTORY ==========
+package "factory" {
+  abstract class ImovelFactory {
+    + {abstract} criarImovel(): Imovel
+  }
+  class CasaFactory
+  class ApartamentoFactory
+  class TerrenoFactory
+  class SalaComercialFactory
+  class GalpaoFactory
+  ImovelFactory <|-- CasaFactory
+  ImovelFactory <|-- ApartamentoFactory
+  ImovelFactory <|-- TerrenoFactory
+  ImovelFactory <|-- SalaComercialFactory
+  ImovelFactory <|-- GalpaoFactory
+  ImovelFactory ..> Imovel : cria
+}
+
+' ========== PROTOTYPE (subclasses de Imovel são os protótipos) ==========
+package "prototype" {
+  interface ImovelPrototype {
+    + clone(): Imovel
+  }
+  class ImovelPrototypeRegistry {
+    - prototipos: Map<String, ImovelPrototype>
+    + clonarPrototipo(String): Imovel
+    + {static} criarRegistroPadrao(): ImovelPrototypeRegistry
+  }
+  ImovelPrototype ..> Imovel : clone
+  ImovelPrototypeRegistry o-- ImovelPrototype
+}
+ImovelPrototype <|.. Casa
+ImovelPrototype <|.. Apartamento
+ImovelPrototype <|.. Terreno
+
+' ========== BUSCA ==========
+package "busca" {
+  interface FiltroBusca {
+    + aceita(Anuncio): boolean
+  }
+  class FiltroTipoImovel
+  class FiltroBairro
+  class FiltroPreco
+  class FiltroArea
+  class FiltroQuartos
+  class FiltroTitulo
+  class BuscaService {
+    + {static} buscar(List<Anuncio>, List<FiltroBusca>): List<Anuncio>
+  }
+  FiltroBusca <|.. FiltroTipoImovel
+  FiltroBusca <|.. FiltroBairro
+  FiltroBusca <|.. FiltroPreco
+  FiltroBusca <|.. FiltroArea
+  FiltroBusca <|.. FiltroQuartos
+  FiltroBusca <|.. FiltroTitulo
+  BuscaService ..> FiltroBusca : usa
+  BuscaService ..> Anuncio : filtra
+}
+
+' ========== VALIDAÇÃO ==========
+package "validacao" {
+  abstract class ValidadorAnuncio {
+    - proximo: ValidadorAnuncio
+    + setProximo(ValidadorAnuncio): void
+    # passarParaProximo(Anuncio): boolean
+    + {abstract} validar(Anuncio): boolean
+  }
+  class ValidadorPreco
+  class ValidadorTitulo
+  class ValidadorImovel
+  class ValidadorUsuario {
+    + validar(String nome, String email): List<String>
+  }
+  ValidadorAnuncio <|-- ValidadorPreco
+  ValidadorAnuncio <|-- ValidadorTitulo
+  ValidadorAnuncio <|-- ValidadorImovel
+  ValidadorAnuncio ..> Anuncio : valida
+}
+
+' ========== USUÁRIO ==========
+package "usuario" {
+  class Usuario {
+    - id: Long
+    - nome: String
+    - email: String
+    + getNome(): String
+    + getEmail(): String
+    + enviarMensagemVia(ChatMediator, String): void
+  }
+}
+Anuncio --> Usuario : dono (implícito)
+InteressadosAnuncio --> Usuario
+
+' ========== CHAT (Mediator) ==========
+package "chat" {
+  interface ChatMediator {
+    + enviarMensagem(Usuario, String): void
+    + getMensagens(): List<Mensagem>
+  }
+  class Conversa {
+    - id: Long
+    - anuncio: Anuncio
+    - interessado: Usuario
+    - donoAnuncio: Usuario
+    - mensagens: List<Mensagem>
+    + enviarMensagem(Usuario, String): void
+    + ehMesma(Anuncio, Usuario, Usuario): boolean
+  }
+  class Mensagem {
+    - id: Long
+    - texto: String
+    - remetente: Usuario
+    - dataHora: LocalDateTime
+  }
+  ChatMediator <|.. Conversa
+  Conversa *-- Mensagem
+  Conversa --> Anuncio
+  Conversa --> Usuario
+  Mensagem --> Usuario
+}
+Usuario ..> ChatMediator : usa
+
+' ========== COMPRA ==========
+package "compra" {
+  class Compra {
+    - comprador: Usuario
+    - anuncio: Anuncio
+    - data: LocalDateTime
+  }
+  class SolicitacaoCompra {
+    - comprador: Usuario
+    - anuncio: Anuncio
+    - formaPagamentoNome: String
+    - data: LocalDateTime
+  }
+  Compra --> Usuario
+  Compra --> Anuncio
+  SolicitacaoCompra --> Usuario
+  SolicitacaoCompra --> Anuncio
+}
+
+' ========== PAGAMENTO ==========
+package "pagamento" {
+  interface FormaPagamento {
+    + getNome(): String
+  }
+  class PagamentoCartao
+  class PagamentoPix
+  class PagamentoBoleto
+  class ServicoPagamento
+  FormaPagamento <|.. PagamentoCartao
+  FormaPagamento <|.. PagamentoPix
+  FormaPagamento <|.. PagamentoBoleto
+  SolicitacaoCompra ..> FormaPagamento
+}
+
+' ========== NOTIFICAÇÃO (Observer + Adapter) ==========
+package "notificacao" {
+  interface Observer {
+    + atualizar(Anuncio): void
+  }
+  interface ServicoNotificacaoExterno {
+    + enviar(String, String): void
+  }
+  class NotificacaoObserver
+  class NotificacaoInteressadosObserver
+  class EmailAdapter
+  class SmsAdapter
+  class EmailApi
+  class Notificacao
+  Observer <|.. NotificacaoObserver
+  Observer <|.. NotificacaoInteressadosObserver
+  ServicoNotificacaoExterno <|.. EmailAdapter
+  ServicoNotificacaoExterno <|.. SmsAdapter
+  Observer ..> Anuncio : atualizar(Anuncio)
+}
+Anuncio --> Observer : notifica
+
+' ========== CONFIG (Singleton) ==========
+package "config" {
+  class Configuracao <<Singleton>> {
+    - parametros: Properties
+    - {static} instancia: Configuracao
+    - Configuracao()
+    + {static} getInstancia(): Configuracao
+    + getPrecoMinimoModeracao(): double
+    + getTermosImproprios(): List<String>
+  }
+}
+
+' ========== MODERAÇÃO ==========
+package "moderacao" {
+  class ServicoModeracao {
+    - config: Configuracao
+    + validarRegras(Anuncio): ResultadoModeracao
+  }
+  class ResultadoModeracao {
+    - aprovado: boolean
+    - erros: List<String>
+  }
+  ServicoModeracao --> Configuracao
+  ServicoModeracao ..> Anuncio : valida
+  ServicoModeracao --> ResultadoModeracao
+}
+
+' ========== CSV ==========
+package "csv" {
+  class CarregadorCSV {
+    + carregarUsuarios(Path): List<Usuario>
+    + carregarAnuncios(Path, List<Usuario>): List<Anuncio>
+  }
+  CarregadorCSV ..> Usuario : cria
+  CarregadorCSV ..> Anuncio : cria
+}
+
+' ========== SAÍDA (E2) ==========
+package "saida" {
+  interface Saida {
+    + escrever(String): void
+    + escreverSemQuebra(String): void
+  }
+  class ConsoleSaida
+  Saida <|.. ConsoleSaida
+}
+
+' ========== MAIN ==========
+class Main {
+  + {static} main(String[]): void
+}
+Main ..> Saida : usa
+Main ..> CarregadorCSV : usa
+Main ..> Configuracao : usa
+Main ..> ValidadorUsuario : usa
+Main ..> ServicoModeracao : usa
+Main ..> BuscaService : usa
+Main ..> ImovelPrototypeRegistry : usa
+
+@enduml

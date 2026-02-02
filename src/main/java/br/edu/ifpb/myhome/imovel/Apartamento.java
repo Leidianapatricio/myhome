@@ -1,6 +1,12 @@
 package br.edu.ifpb.myhome.imovel;
 
-public class Apartamento extends Imovel {
+import br.edu.ifpb.myhome.prototype.ImovelPrototype;
+
+/**
+ * RF02 - Subclasse de Imovel que atua como protótipo: implementa ImovelPrototype
+ * e clone() para produzir cópias com configuração padrão ou cópia do estado atual.
+ */
+public class Apartamento extends Imovel implements ImovelPrototype {
 
     private int quartos;
     private int andar;
@@ -12,6 +18,15 @@ public class Apartamento extends Imovel {
         setAreaMetrosQuadrados(area);
         this.andar = andar;
         this.possuiElevador = possuiElevador;
+    }
+
+    @Override
+    public Imovel clone() {
+        Apartamento a = new Apartamento(getEndereco(), getPreco(), quartos, getAreaMetrosQuadrados(), andar, possuiElevador);
+        a.setBairro(getBairro());
+        a.setDescricao(getDescricao());
+        a.setQuantidadeSuites(getQuantidadeSuites());
+        return a;
     }
 
     @Override

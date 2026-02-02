@@ -1,0 +1,50 @@
+@startuml diagrama-estados-anuncio
+!theme plain
+title Ciclo de vida do anúncio (RF04) – Estado inicial e finais
+
+state "Rascunho" as Rascunho {
+}
+
+state "Moderação" as Moderacao {
+}
+
+state "Ativo" as Ativo {
+}
+
+state "Suspenso" as Suspenso {
+}
+
+state "Vendido" as Vendido {
+}
+
+state "Arquivado" as Arquivado {
+}
+
+[*] --> Rascunho : **INÍCIO**\n(anúncio criado)
+
+Rascunho --> Moderacao : submeter\n(proximo)
+
+Moderacao --> Ativo : aprovado\n(proximo)
+Moderacao --> Suspenso : reprovado\n(setEstado)
+
+Suspenso --> Rascunho : editar novamente\n(proximo)
+
+Ativo --> Arquivado : confirmar pagamento\n(vendedor confirma recebimento)
+Ativo --> Suspenso : suspender\n(usuário retira)
+Ativo --> Vendido : proximo
+
+Arquivado --> [*] : **FIM**\n(fluxo principal)
+Vendido --> [*] : **FIM**\n(estado final alternativo)
+
+note right of Rascunho
+  Anúncio é criado neste estado
+  (Anuncio construtor)
+end note
+
+note right of Arquivado
+  Após vendedor confirmar
+  recebimento do pagamento
+  (Main – opção 4)
+end note
+
+@enduml
