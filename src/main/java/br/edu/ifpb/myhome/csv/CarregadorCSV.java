@@ -71,6 +71,7 @@ public class CarregadorCSV {
             anuncio.setValorVenda(valorVenda);
             anuncio.setValorAluguel(valorAluguel);
             anuncio.setValorTemporada(valorTemporada);
+            anuncio.setDono(dono);
             anuncios.add(anuncio);
             donoDoAnuncio.put(anuncio, dono);
         }

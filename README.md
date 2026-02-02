@@ -60,7 +60,7 @@ Plataforma de classificados imobiliários em Java: anúncios (venda/aluguel/temp
 | `compra` | Compra, SolicitacaoCompra |
 | `config` | Configuracao |
 | `csv` | CarregadorCSV |
-| `estado` | EstadoAnuncio, RascunhoState, ModeracaoState, AtivoState, ArquivadoState, SuspensoState, VendidoState |
+| `estado` | EstadoAnuncio, RascunhoState, ModeracaoState, AtivoState, ArquivadoState, SuspensoState |
 | `factory` | ImovelFactory, CasaFactory, ApartamentoFactory, TerrenoFactory, SalaComercialFactory |
 | `imovel` | Imovel, Casa, Apartamento, Terreno, SalaComercial, Galpao |
 | `moderacao` | ServicoModeracao, ResultadoModeracao |

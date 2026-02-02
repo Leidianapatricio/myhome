@@ -4,5 +4,9 @@ import br.edu.ifpb.myhome.anuncio.Anuncio;
 
 public interface ServicoNotificacaoExterno {
 
-    void enviarMensagem(Anuncio a);
+    /**
+     * Envia mensagem externa (e-mail/SMS) conforme o anúncio e o tipo de evento.
+     * @throws NotificacaoException quando o envio falhar (ex.: e-mail não enviado)
+     */
+    void enviarMensagem(Anuncio a, TipoEvento tipo) throws NotificacaoException;
 }

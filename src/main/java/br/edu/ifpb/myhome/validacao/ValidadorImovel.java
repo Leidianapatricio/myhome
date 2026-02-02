@@ -5,9 +5,9 @@ import br.edu.ifpb.myhome.anuncio.Anuncio;
 public class ValidadorImovel extends ValidadorAnuncio {
 
     @Override
-    public boolean validar(Anuncio a) {
+    public ResultadoValidacao validar(Anuncio a) {
         if (a.getImovel() == null) {
-            return false;
+            return ResultadoValidacao.erro("Imóvel é obrigatório.");
         }
         return passarParaProximo(a);
     }

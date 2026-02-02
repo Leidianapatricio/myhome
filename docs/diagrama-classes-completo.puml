@@ -1,11 +1,11 @@
-@startuml diagrama-classes-myhome
+@startuml diagrama-classes-myhome-completo
 !theme plain
-title MyHome – Diagrama de classes (todas as classes principais)
+title MyHome – Diagrama de classes completo (todas as classes)
 
 skinparam packageStyle rectangle
 skinparam classAttributeIconSize 0
 
-' ========== ANÚNCIO ==========
+' ==================== ANÚNCIO ====================
 package "anuncio" {
   class Anuncio {
     - titulo: String
@@ -41,7 +41,7 @@ package "anuncio" {
     + {static} getInstancia(): LogMudancaEstado
     + registrar(Anuncio, EstadoAnuncio, EstadoAnuncio): void
   }
-  class "EntradaLogEstado" as EntradaLogEstado {
+  class EntradaLogEstado {
     - tituloAnuncio: String
     - estadoAnterior: String
     - estadoNovo: String
@@ -52,7 +52,7 @@ package "anuncio" {
   Anuncio --> TipoOferta
 }
 
-' ========== ESTADO (State) ==========
+' ==================== ESTADO (State) ====================
 package "estado" {
   interface EstadoAnuncio {
     + proximo(Anuncio): void
@@ -62,19 +62,17 @@ package "estado" {
   class ModeracaoState
   class AtivoState
   class SuspensoState
-  class VendidoState
   class ArquivadoState
   EstadoAnuncio <|.. RascunhoState
   EstadoAnuncio <|.. ModeracaoState
   EstadoAnuncio <|.. AtivoState
   EstadoAnuncio <|.. SuspensoState
-  EstadoAnuncio <|.. VendidoState
   EstadoAnuncio <|.. ArquivadoState
 }
 Anuncio --> EstadoAnuncio : estado
 Anuncio ..> LogMudancaEstado : registrar
 
-' ========== IMÓVEL ==========
+' ==================== IMÓVEL (Casa, Apartamento, Terreno são Prototype) ====================
 package "imovel" {
   abstract class Imovel {
     - endereco: String
@@ -85,9 +83,19 @@ package "imovel" {
     - quantidadeSuites: int
     + {abstract} calcularValor(): double
   }
-  class Casa
-  class Apartamento
-  class Terreno
+  class Casa {
+    - possuiQuintal: boolean
+    + clone(): Imovel
+  }
+  class Apartamento {
+    - quartos: int
+    - andar: int
+    - possuiElevador: boolean
+    + clone(): Imovel
+  }
+  class Terreno {
+    + clone(): Imovel
+  }
   class SalaComercial
   class Galpao
   Imovel <|-- Casa
@@ -98,7 +106,25 @@ package "imovel" {
 }
 Anuncio --> Imovel : imovel
 
-' ========== FACTORY ==========
+' ==================== PROTOTYPE ====================
+package "prototype" {
+  interface ImovelPrototype {
+    + clone(): Imovel
+  }
+  class ImovelPrototypeRegistry {
+    - prototipos: Map<String, ImovelPrototype>
+    + registrar(String, ImovelPrototype): void
+    + clonarPrototipo(String): Imovel
+    + {static} criarRegistroPadrao(): ImovelPrototypeRegistry
+  }
+  ImovelPrototype ..> Imovel : clone
+  ImovelPrototypeRegistry o-- ImovelPrototype : armazena
+}
+ImovelPrototype <|.. Casa
+ImovelPrototype <|.. Apartamento
+ImovelPrototype <|.. Terreno
+
+' ==================== FACTORY ====================
 package "factory" {
   abstract class ImovelFactory {
     + {abstract} criarImovel(): Imovel
@@ -116,24 +142,7 @@ package "factory" {
   ImovelFactory ..> Imovel : cria
 }
 
-' ========== PROTOTYPE (subclasses de Imovel são os protótipos) ==========
-package "prototype" {
-  interface ImovelPrototype {
-    + clone(): Imovel
-  }
-  class ImovelPrototypeRegistry {
-    - prototipos: Map<String, ImovelPrototype>
-    + clonarPrototipo(String): Imovel
-    + {static} criarRegistroPadrao(): ImovelPrototypeRegistry
-  }
-  ImovelPrototype ..> Imovel : clone
-  ImovelPrototypeRegistry o-- ImovelPrototype
-}
-ImovelPrototype <|.. Casa
-ImovelPrototype <|.. Apartamento
-ImovelPrototype <|.. Terreno
-
-' ========== BUSCA ==========
+' ==================== BUSCA ====================
 package "busca" {
   interface FiltroBusca {
     + aceita(Anuncio): boolean
@@ -157,7 +166,7 @@ package "busca" {
   BuscaService ..> Anuncio : filtra
 }
 
-' ========== VALIDAÇÃO ==========
+' ==================== VALIDAÇÃO (Chain of Responsibility) ====================
 package "validacao" {
   abstract class ValidadorAnuncio {
     - proximo: ValidadorAnuncio
@@ -177,7 +186,7 @@ package "validacao" {
   ValidadorAnuncio ..> Anuncio : valida
 }
 
-' ========== USUÁRIO ==========
+' ==================== USUÁRIO ====================
 package "usuario" {
   class Usuario {
     - id: Long
@@ -188,10 +197,10 @@ package "usuario" {
     + enviarMensagemVia(ChatMediator, String): void
   }
 }
-Anuncio --> Usuario : dono (implícito)
-InteressadosAnuncio --> Usuario
+Anuncio ..> Usuario : dono
+InteressadosAnuncio --> Usuario : lista
 
-' ========== CHAT (Mediator) ==========
+' ==================== CHAT (Mediator) ====================
 package "chat" {
   interface ChatMediator {
     + enviarMensagem(Usuario, String): void
@@ -220,7 +229,7 @@ package "chat" {
 }
 Usuario ..> ChatMediator : usa
 
-' ========== COMPRA ==========
+' ==================== COMPRA ====================
 package "compra" {
   class Compra {
     - comprador: Usuario
@@ -239,7 +248,7 @@ package "compra" {
   SolicitacaoCompra --> Anuncio
 }
 
-' ========== PAGAMENTO ==========
+' ==================== PAGAMENTO (Strategy) ====================
 package "pagamento" {
   interface FormaPagamento {
     + getNome(): String
@@ -248,13 +257,14 @@ package "pagamento" {
   class PagamentoPix
   class PagamentoBoleto
   class ServicoPagamento
+  enum PlanoAssinatura
   FormaPagamento <|.. PagamentoCartao
   FormaPagamento <|.. PagamentoPix
   FormaPagamento <|.. PagamentoBoleto
-  SolicitacaoCompra ..> FormaPagamento
+  SolicitacaoCompra ..> FormaPagamento : usa
 }
 
-' ========== NOTIFICAÇÃO (Observer + Adapter) ==========
+' ==================== NOTIFICAÇÃO (Observer + Adapter) ====================
 package "notificacao" {
   interface Observer {
     + atualizar(Anuncio): void
@@ -276,7 +286,7 @@ package "notificacao" {
 }
 Anuncio --> Observer : notifica
 
-' ========== CONFIG (Singleton) ==========
+' ==================== CONFIG (Singleton) ====================
 package "config" {
   class Configuracao <<Singleton>> {
     - parametros: Properties
@@ -285,10 +295,12 @@ package "config" {
     + {static} getInstancia(): Configuracao
     + getPrecoMinimoModeracao(): double
     + getTermosImproprios(): List<String>
+    + getDescricaoTamanhoMinimo(): int
+    + getFotosMinimoModeracao(): int
   }
 }
 
-' ========== MODERAÇÃO ==========
+' ==================== MODERAÇÃO ====================
 package "moderacao" {
   class ServicoModeracao {
     - config: Configuracao
@@ -303,7 +315,7 @@ package "moderacao" {
   ServicoModeracao --> ResultadoModeracao
 }
 
-' ========== CSV ==========
+' ==================== CSV ====================
 package "csv" {
   class CarregadorCSV {
     + carregarUsuarios(Path): List<Usuario>
@@ -313,7 +325,7 @@ package "csv" {
   CarregadorCSV ..> Anuncio : cria
 }
 
-' ========== SAÍDA (E2) ==========
+' ==================== SAÍDA (E2) ====================
 package "saida" {
   interface Saida {
     + escrever(String): void
@@ -323,7 +335,7 @@ package "saida" {
   Saida <|.. ConsoleSaida
 }
 
-' ========== MAIN ==========
+' ==================== MAIN ====================
 class Main {
   + {static} main(String[]): void
 }
@@ -334,5 +346,7 @@ Main ..> ValidadorUsuario : usa
 Main ..> ServicoModeracao : usa
 Main ..> BuscaService : usa
 Main ..> ImovelPrototypeRegistry : usa
+Main ..> Anuncio : gerencia
+Main ..> Usuario : gerencia
 
 @enduml

@@ -2,6 +2,10 @@ package br.edu.ifpb.myhome.validacao;
 
 import br.edu.ifpb.myhome.anuncio.Anuncio;
 
+/**
+ * Chain of Responsibility: cada validador retorna ResultadoValidacao
+ * com sucesso ou com a mensagem de erro específica (qual falhou e por quê).
+ */
 public abstract class ValidadorAnuncio {
 
     private ValidadorAnuncio proximo;
@@ -10,9 +14,9 @@ public abstract class ValidadorAnuncio {
         this.proximo = v;
     }
 
-    protected boolean passarParaProximo(Anuncio a) {
-        return proximo == null || proximo.validar(a);
+    protected ResultadoValidacao passarParaProximo(Anuncio a) {
+        return proximo == null ? ResultadoValidacao.ok() : proximo.validar(a);
     }
 
-    public abstract boolean validar(Anuncio a);
+    public abstract ResultadoValidacao validar(Anuncio a);
 }

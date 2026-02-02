@@ -30,10 +30,7 @@ import br.edu.ifpb.myhome.csv.CarregadorCSV;
 import br.edu.ifpb.myhome.chat.Conversa;
 import br.edu.ifpb.myhome.compra.Compra;
 import br.edu.ifpb.myhome.compra.SolicitacaoCompra;
-import br.edu.ifpb.myhome.estado.ArquivadoState;
-import br.edu.ifpb.myhome.estado.AtivoState;
 import br.edu.ifpb.myhome.moderacao.ResultadoModeracao;
-import br.edu.ifpb.myhome.moderacao.ServicoModeracao;
 import br.edu.ifpb.myhome.chat.Mensagem;
 import br.edu.ifpb.myhome.prototype.ImovelPrototypeRegistry;
 import br.edu.ifpb.myhome.imovel.Apartamento;
@@ -41,6 +38,7 @@ import br.edu.ifpb.myhome.imovel.Casa;
 import br.edu.ifpb.myhome.imovel.Imovel;
 import br.edu.ifpb.myhome.imovel.Terreno;
 import br.edu.ifpb.myhome.notificacao.EmailAdapter;
+import br.edu.ifpb.myhome.notificacao.NotificacaoFalhaHandler;
 import br.edu.ifpb.myhome.notificacao.NotificacaoInteressadosObserver;
 import br.edu.ifpb.myhome.notificacao.NotificacaoObserver;
 import br.edu.ifpb.myhome.notificacao.Observer;
@@ -49,10 +47,9 @@ import br.edu.ifpb.myhome.saida.ConsoleSaida;
 import br.edu.ifpb.myhome.saida.Saida;
 import br.edu.ifpb.myhome.usuario.Usuario;
 import br.edu.ifpb.myhome.util.FormatadorMoeda;
+import br.edu.ifpb.myhome.validacao.ResultadoValidacao;
 import br.edu.ifpb.myhome.validacao.ValidadorAnuncio;
-import br.edu.ifpb.myhome.validacao.ValidadorImovel;
-import br.edu.ifpb.myhome.validacao.ValidadorPreco;
-import br.edu.ifpb.myhome.validacao.ValidadorTitulo;
+import br.edu.ifpb.myhome.validacao.ValidadorChainFactory;
 import br.edu.ifpb.myhome.validacao.ValidadorUsuario;
 
 public class Main {
@@ -66,9 +63,11 @@ public class Main {
         List<SolicitacaoCompra> solicitacoesPendentes = new ArrayList<>();
         Scanner sc = new Scanner(System.in);
         ServicoNotificacaoExterno servicoNotif = new EmailAdapter();
-        Observer notifObserver = new NotificacaoObserver(servicoNotif);
         Saida saida = new ConsoleSaida();
-        Observer interessadosObserver = new NotificacaoInteressadosObserver(saida);
+        NotificacaoFalhaHandler falhaHandler = (a, evento, e) ->
+                saida.escrever("[Erro] Falha na notificação: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+        Observer notifObserver = new NotificacaoObserver(servicoNotif, falhaHandler);
+        Observer interessadosObserver = new NotificacaoInteressadosObserver(saida, falhaHandler);
 
         Configuracao.getInstancia().carregarParametros();
         ImovelPrototypeRegistry registroPrototipos = ImovelPrototypeRegistry.criarRegistroPadrao();
@@ -85,7 +84,7 @@ public class Main {
                 for (Anuncio a : anuncios) {
                     a.adicionarObserver(notifObserver);
                     a.adicionarObserver(interessadosObserver);
-                    a.setEstado(new AtivoState());
+                    a.ativar();
                 }
                 saida.escrever("E1 - Carregados " + anuncios.size() + " anúncio(s) de dados/anuncios.csv");
             }
@@ -300,12 +299,10 @@ public class Main {
                             anuncio.setTipoOferta(tipoOferta);
                             anuncio.setValorAluguel(valorAluguel);
                             anuncio.setValorTemporada(valorTemporada);
-                            ValidadorAnuncio v1 = new ValidadorPreco();
-                            ValidadorAnuncio v2 = new ValidadorTitulo();
-                            ValidadorAnuncio v3 = new ValidadorImovel();
-                            v1.setProximo(v2);
-                            v2.setProximo(v3);
-                            if (v1.validar(anuncio)) {
+                            ValidadorAnuncio validador = ValidadorChainFactory.criarCadeiaPadrao();
+                            ResultadoValidacao resValidacao = validador.validar(anuncio);
+                            if (resValidacao.isValido()) {
+                                anuncio.setDono(usuario);
                                 anuncio.adicionarObserver(notifObserver);
                                 anuncio.adicionarObserver(interessadosObserver);
                                 usuario.editarAnuncio(anuncio);
@@ -315,7 +312,8 @@ public class Main {
                                 saida.escrever("Use a opção 'Submeter anúncio' no menu para enviar à moderação e publicar.");
                                 pausarParaContinuar(saida, sc);
                             } else {
-                                saida.escrever("Validação falhou. Anúncio não criado.");
+                                saida.escrever("Validação falhou. Anúncio não criado:");
+                                for (String err : resValidacao.getErros()) saida.escrever("  - " + err);
                                 pausarParaContinuar(saida, sc);
                             }
                         }
@@ -543,7 +541,7 @@ public class Main {
                                     SolicitacaoCompra s = pendentesDoVendedor.get(is - 1);
                                     solicitacoesPendentes.remove(s);
                                     compras.add(new Compra(s.getComprador(), s.getAnuncio()));
-                                    s.getAnuncio().setEstado(new ArquivadoState());
+                                    s.getAnuncio().confirmarPagamento();
                                     saida.escrever("Pagamento confirmado. Imóvel marcado como " + (s.getAnuncio().getTipoOferta() == TipoOferta.ALUGUEL ? "alugado" : s.getAnuncio().getTipoOferta() == TipoOferta.TEMPORADA ? "alugado (temporada)" : "vendido") + ". Anúncio arquivado.");
                                     pausarParaContinuar(saida, sc);
                                 } else {
@@ -710,10 +708,8 @@ public class Main {
                     int idx = lerInt(sc, 0);
                     if (idx >= 1 && idx <= rascunhos.size()) {
                         Anuncio a = rascunhos.get(idx - 1);
-                        ServicoModeracao servicoMod = new ServicoModeracao();
-                        ResultadoModeracao res = servicoMod.validarRegras(a);
+                        ResultadoModeracao res = a.submeterParaPublicacao();
                         if (res.isAprovado()) {
-                            a.setEstado(new AtivoState());
                             saida.escrever("Anúncio aprovado e publicado (moderação automática).");
                         } else {
                             saida.escrever("Anúncio não aprovado na validação automática:");

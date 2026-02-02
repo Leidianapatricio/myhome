@@ -14,9 +14,6 @@ state "Ativo" as Ativo {
 state "Suspenso" as Suspenso {
 }
 
-state "Vendido" as Vendido {
-}
-
 state "Arquivado" as Arquivado {
 }
 
@@ -30,11 +27,10 @@ Moderacao --> Suspenso : reprovado\n(setEstado)
 Suspenso --> Rascunho : editar novamente\n(proximo)
 
 Ativo --> Arquivado : confirmar pagamento\n(vendedor confirma recebimento)
+Ativo --> Arquivado : proximo
 Ativo --> Suspenso : suspender\n(usuário retira)
-Ativo --> Vendido : proximo
 
-Arquivado --> [*] : **FIM**\n(fluxo principal)
-Vendido --> [*] : **FIM**\n(estado final alternativo)
+Arquivado --> [*] : **FIM**\n(estado final único)
 
 note right of Rascunho
   Anúncio é criado neste estado
