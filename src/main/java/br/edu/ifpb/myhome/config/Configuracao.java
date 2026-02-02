@@ -4,7 +4,11 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * RF07 - Configuração centralizada: taxas, limites, termos impróprios, URLs.
@@ -51,5 +55,35 @@ public class Configuracao {
 
     public void setParametro(String chave, String valor) {
         parametros.setProperty(chave, valor);
+    }
+
+    /** RF03 - Lista de termos proibidos (título/descrição). Regra dinâmica carregada de config. */
+    public List<String> getTermosImproprios() {
+        String v = parametros.getProperty("termos.improprios", "");
+        if (v == null || v.trim().isEmpty()) return new ArrayList<>();
+        return Arrays.stream(v.split(",")).map(String::trim).filter(s -> !s.isEmpty())
+                .map(String::toLowerCase).collect(Collectors.toList());
+    }
+
+    /** RF03 - Preço mínimo em reais (evita zero, um real, valores sem sentido). */
+    public double getPrecoMinimoModeracao() {
+        try {
+            String v = parametros.getProperty("preco.minimo", "1000");
+            return Double.parseDouble(v.trim().replace(",", "."));
+        } catch (NumberFormatException e) { return 1000.0; }
+    }
+
+    /** RF03 - Quantidade mínima de caracteres na descrição (ou fotos mínimas). */
+    public int getDescricaoTamanhoMinimo() {
+        try {
+            return Integer.parseInt(parametros.getProperty("moderacao.descricao.minimo", "10").trim());
+        } catch (NumberFormatException e) { return 10; }
+    }
+
+    /** RF03 - Quantidade mínima de fotos (se descrição for menor que o mínimo). */
+    public int getFotosMinimoModeracao() {
+        try {
+            return Integer.parseInt(parametros.getProperty("moderacao.fotos.minimo", "1").trim());
+        } catch (NumberFormatException e) { return 1; }
     }
 }

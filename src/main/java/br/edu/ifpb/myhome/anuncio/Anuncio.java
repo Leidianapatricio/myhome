@@ -20,6 +20,8 @@ public class Anuncio {
     private double valorVenda;
     private double valorAluguel;
     private double valorTemporada;
+    /** RF03 - Quantidade de fotos do anúncio (regra: mínimo 1 foto OU descrição com tamanho mínimo). */
+    private int quantidadeFotos;
     private List<Observer> observers = new ArrayList<>();
     private final InteressadosAnuncio interessados = new InteressadosAnuncio();
 
@@ -125,4 +127,7 @@ public class Anuncio {
     public String getTipoImovel() {
         return imovel != null ? imovel.getClass().getSimpleName() : "";
     }
+
+    public int getQuantidadeFotos() { return quantidadeFotos; }
+    public void setQuantidadeFotos(int quantidadeFotos) { this.quantidadeFotos = Math.max(0, quantidadeFotos); }
 }

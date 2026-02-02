@@ -32,11 +32,10 @@ import br.edu.ifpb.myhome.compra.Compra;
 import br.edu.ifpb.myhome.compra.SolicitacaoCompra;
 import br.edu.ifpb.myhome.estado.ArquivadoState;
 import br.edu.ifpb.myhome.estado.AtivoState;
+import br.edu.ifpb.myhome.moderacao.ResultadoModeracao;
+import br.edu.ifpb.myhome.moderacao.ServicoModeracao;
 import br.edu.ifpb.myhome.chat.Mensagem;
-import br.edu.ifpb.myhome.factory.ApartamentoFactory;
-import br.edu.ifpb.myhome.factory.CasaFactory;
-import br.edu.ifpb.myhome.factory.ImovelFactory;
-import br.edu.ifpb.myhome.factory.TerrenoFactory;
+import br.edu.ifpb.myhome.prototype.ImovelPrototypeRegistry;
 import br.edu.ifpb.myhome.imovel.Apartamento;
 import br.edu.ifpb.myhome.imovel.Casa;
 import br.edu.ifpb.myhome.imovel.Imovel;
@@ -71,6 +70,7 @@ public class Main {
         Observer interessadosObserver = new NotificacaoInteressadosObserver(saida);
 
         Configuracao.getInstancia().carregarParametros();
+        ImovelPrototypeRegistry registroPrototipos = ImovelPrototypeRegistry.criarRegistroPadrao();
         try {
             Path pathUsuarios = Paths.get("dados/usuarios.csv");
             Path pathAnuncios = Paths.get("dados/anuncios.csv");
@@ -111,14 +111,10 @@ public class Main {
                 }
                 if (opcao == 1) {
                     listarMensagensChat(saida, conversas, usuarioLogado);
-                    saida.escrever("");
-                    saida.escrever("Pressione Enter para continuar...");
-                    sc.nextLine();
+                    pausarParaContinuar(saida, sc);
                 } else if (opcao == 2) {
                     listarMensagensConfirmacaoPagamento(saida, solicitacoesPendentes, donoDoAnuncio, usuarioLogado);
-                    saida.escrever("");
-                    saida.escrever("Pressione Enter para continuar...");
-                    sc.nextLine();
+                    pausarParaContinuar(saida, sc);
                 } else if (opcao == 3) {
                     exibirMenuCompleto = true;
                 } else if (opcao == 0) {
@@ -148,6 +144,7 @@ public class Main {
             saida.escrever("9 - Consultar log de mudanças de estado");
             if (usuarioLogado != null) {
                 saida.escrever("10 - Voltar ao menu reduzido");
+                saida.escrever("11 - Submeter anúncio (moderação automática)");
             }
             saida.escrever("0 - Sair");
             saida.escreverSemQuebra("Opção: ");
@@ -165,6 +162,7 @@ public class Main {
                 String email = sc.nextLine().trim();
                 if (email.isEmpty()) {
                     saida.escrever("Email não pode ser vazio.");
+                    pausarParaContinuar(saida, sc);
                 } else {
                     Usuario encontrado = buscarUsuarioPorEmail(usuarios, email);
                     if (encontrado == null) {
@@ -176,18 +174,15 @@ public class Main {
                             usuarios.add(novo);
                             usuarioLogado = novo;
                             saida.escrever("Cadastrado e logado como " + novo.getNome() + ".");
-                            saida.escrever("");
-                            saida.escrever("Pressione Enter para continuar...");
-                            sc.nextLine();
+                            pausarParaContinuar(saida, sc);
                         } else {
                             saida.escrever("Entrada cancelada.");
+                            pausarParaContinuar(saida, sc);
                         }
                     } else {
                         usuarioLogado = encontrado;
                         saida.escrever("Bem-vindo(a), " + usuarioLogado.getNome() + "!");
-                        saida.escrever("");
-                        saida.escrever("Pressione Enter para continuar...");
-                        sc.nextLine();
+                        pausarParaContinuar(saida, sc);
                     }
                 }
             } else if (opcao == 2) {
@@ -197,6 +192,7 @@ public class Main {
                 } else {
                     saida.escrever("Nenhum usuário logado.");
                 }
+                pausarParaContinuar(saida, sc);
             } else if (opcao == 3) {
                 saida.escrever("\n--- Cadastro de usuário ---");
                 saida.escreverSemQuebra("Nome: ");
@@ -206,6 +202,7 @@ public class Main {
                 Usuario u = new Usuario(nome, email);
                 usuarios.add(u);
                 saida.escrever("Usuário cadastrado (ID: " + u.getId() + "): " + u.getNome());
+                pausarParaContinuar(saida, sc);
             } else if (opcao == 4) {
                 saida.escrever("\n--- Usuários ---");
                 if (usuarios.isEmpty()) {
@@ -216,9 +213,7 @@ public class Main {
                         saida.escrever((i + 1) + ") ID: " + u.getId() + " | " + u.getNome() + " | " + u.getEmail());
                     }
                 }
-                saida.escrever("");
-                saida.escrever("Pressione Enter para continuar...");
-                sc.nextLine();
+                pausarParaContinuar(saida, sc);
             } else if (opcao == 5) {
                 Usuario usuario = usuarioLogado;
                 if (usuario == null && !usuarios.isEmpty()) {
@@ -246,45 +241,46 @@ public class Main {
                         double valorAluguel = lerDouble(sc, 0);
                         saida.escreverSemQuebra("Valor temporada (R$/diária): ");
                         double valorTemporada = lerDouble(sc, 0);
-                        saida.escrever("Tipo de imóvel: 1=Casa 2=Apartamento 3=Terreno");
+                        saida.escrever("Tipo de imóvel: 1=Casa 2=Apartamento 3=Terreno (RF02: inicia com configuração padrão)");
                         saida.escreverSemQuebra("Tipo: ");
                         int tipoImovel;
                         try { tipoImovel = Integer.parseInt(sc.nextLine().trim()); } catch (NumberFormatException e) { tipoImovel = 0; }
-                        ImovelFactory factory = null;
-                        if (tipoImovel == 1) factory = new CasaFactory();
-                        else if (tipoImovel == 2) factory = new ApartamentoFactory();
-                        else if (tipoImovel == 3) factory = new TerrenoFactory();
-                        if (factory == null) {
+                        String tipoStr = tipoImovel == 1 ? "casa" : (tipoImovel == 2 ? "apartamento" : (tipoImovel == 3 ? "terreno" : null));
+                        Imovel imovel = tipoStr != null ? registroPrototipos.clonarPrototipo(tipoStr) : null;
+                        if (imovel == null) {
                             saida.escrever("Tipo inválido. Anúncio cancelado.");
+                            pausarParaContinuar(saida, sc);
                         } else {
-                            Imovel imovel = factory.criarImovel();
                             saida.escreverSemQuebra("Endereço do imóvel: ");
                             imovel.setEndereco(sc.nextLine().trim());
                             saida.escreverSemQuebra("Bairro (ex.: Jaguaribe, Castelo Branco, Bancários, Bessa, Tambaú, Altiplano): ");
                             imovel.setBairro(sc.nextLine().trim());
-                            saida.escreverSemQuebra("Área (m²): ");
-                            imovel.setAreaMetrosQuadrados(lerDouble(sc, 0));
-                            saida.escreverSemQuebra("Descrição do imóvel (detalhes): ");
-                            imovel.setDescricao(sc.nextLine().trim());
-                            saida.escreverSemQuebra("Quantidade de suítes: ");
-                            imovel.setQuantidadeSuites(lerInt(sc, 0));
+                            saida.escreverSemQuebra("Área (m²) [" + (int) imovel.getAreaMetrosQuadrados() + "]: ");
+                            imovel.setAreaMetrosQuadrados(lerDoubleComPadrao(sc, imovel.getAreaMetrosQuadrados()));
+                            saida.escreverSemQuebra("Descrição do imóvel [" + (imovel.getDescricao() != null ? imovel.getDescricao() : "") + "]: ");
+                            String desc = sc.nextLine().trim();
+                            if (!desc.isEmpty()) imovel.setDescricao(desc);
+                            saida.escreverSemQuebra("Quantidade de suítes [" + imovel.getQuantidadeSuites() + "]: ");
+                            imovel.setQuantidadeSuites(lerIntComPadrao(sc, imovel.getQuantidadeSuites()));
                             if (imovel instanceof Casa) {
                                 saida.escreverSemQuebra("Possui quintal? (s/n): ");
                                 ((Casa) imovel).setPossuiQuintal(sc.nextLine().trim().equalsIgnoreCase("s"));
                             } else if (imovel instanceof Apartamento) {
-                                saida.escreverSemQuebra("Número de quartos: ");
-                                try { ((Apartamento) imovel).setQuartos(Integer.parseInt(sc.nextLine().trim())); } catch (NumberFormatException e) {}
+                                saida.escreverSemQuebra("Número de quartos [" + ((Apartamento) imovel).getQuartos() + "]: ");
+                                int q = lerIntComPadrao(sc, ((Apartamento) imovel).getQuartos());
+                                ((Apartamento) imovel).setQuartos(q);
                                 ((Apartamento) imovel).setArea(imovel.getAreaMetrosQuadrados());
-                                saida.escreverSemQuebra("Andar: ");
-                                try {
-                                    ((Apartamento) imovel).setAndar(Integer.parseInt(sc.nextLine().trim()));
-                                } catch (NumberFormatException e) {}
+                                saida.escreverSemQuebra("Andar [" + ((Apartamento) imovel).getAndar() + "]: ");
+                                ((Apartamento) imovel).setAndar(lerIntComPadrao(sc, ((Apartamento) imovel).getAndar()));
                                 saida.escreverSemQuebra("Possui elevador? (s/n): ");
                                 ((Apartamento) imovel).setPossuiElevador(sc.nextLine().trim().equalsIgnoreCase("s"));
                             } else if (imovel instanceof Terreno) {
                                 ((Terreno) imovel).setArea(imovel.getAreaMetrosQuadrados());
                             }
+                            saida.escreverSemQuebra("Quantidade de fotos do anúncio (RF03): ");
+                            int quantidadeFotos = Math.max(0, lerInt(sc, 0));
                             Anuncio anuncio = new Anuncio(titulo, valorVenda, imovel);
+                            anuncio.setQuantidadeFotos(quantidadeFotos);
                             anuncio.setTipoOferta(tipoOferta);
                             anuncio.setValorAluguel(valorAluguel);
                             anuncio.setValorTemporada(valorTemporada);
@@ -299,15 +295,20 @@ public class Main {
                                 usuario.editarAnuncio(anuncio);
                                 anuncios.add(anuncio);
                                 donoDoAnuncio.put(anuncio, usuario);
-                                saida.escrever("Anúncio criado: " + anuncio.getTitulo() + " | " + anuncio.getTipoOferta().getLabel() + " | Venda: " + FormatadorMoeda.formatarReal(anuncio.getValorVenda()) + " | " + anuncio.getImovel().getAreaMetrosQuadrados() + " m² | " + anuncio.getImovel().getQuantidadeSuites() + " suítes");
+                                saida.escrever("Anúncio criado (rascunho): " + anuncio.getTitulo() + " | " + anuncio.getTipoOferta().getLabel() + " | Venda: " + FormatadorMoeda.formatarReal(anuncio.getValorVenda()) + " | " + anuncio.getImovel().getAreaMetrosQuadrados() + " m² | " + anuncio.getImovel().getQuantidadeSuites() + " suítes");
+                                saida.escrever("Use a opção 'Submeter anúncio' no menu para enviar à moderação e publicar.");
+                                pausarParaContinuar(saida, sc);
                             } else {
                                 saida.escrever("Validação falhou. Anúncio não criado.");
+                                pausarParaContinuar(saida, sc);
                             }
                         }
                 } else if (usuarios.isEmpty()) {
                     saida.escrever("Cadastre um usuário primeiro.");
+                    pausarParaContinuar(saida, sc);
                 } else {
                     saida.escrever("Usuário inválido.");
+                    pausarParaContinuar(saida, sc);
                 }
             } else if (opcao == 6) {
                 Usuario usuario = usuarioLogado;
@@ -391,8 +392,9 @@ public class Main {
                                 int quartosMin = lerInt(sc, -1);
                                 if (quartosMin >= 0) filtros.add(new FiltroQuartos(quartosMin));
                             }
-                            if (criterios.isEmpty()) saida.escrever("Nenhum critério escolhido. Listando todos os anúncios.");
-                            List<Anuncio> resultado = BuscaService.buscar(anuncios, filtros);
+                            if (criterios.isEmpty()) saida.escrever("Nenhum critério escolhido. Listando anúncios ativos.");
+                            List<Anuncio> anunciosAtivos = filtrarAnunciosAtivos(anuncios);
+                            List<Anuncio> resultado = BuscaService.buscar(anunciosAtivos, filtros);
                             saida.escrever("\n--- Resultado da busca ---");
                             if (resultado.isEmpty()) {
                                 saida.escrever("Nenhum anúncio encontrado com esse filtro.");
@@ -430,16 +432,16 @@ public class Main {
                                     }
                                 }
                             }
-                            saida.escrever("");
-                            saida.escrever("Pressione Enter para continuar...");
-                            sc.nextLine();
+                            pausarParaContinuar(saida, sc);
                         } else if (acao == 2) {
-                            if (anuncios.isEmpty()) {
-                                saida.escrever("Não há anúncios.");
+                            List<Anuncio> ativos = filtrarAnunciosAtivos(anuncios);
+                            if (ativos.isEmpty()) {
+                                saida.escrever("Não há anúncios ativos para visualizar.");
+                                pausarParaContinuar(saida, sc);
                             } else {
-                                saida.escrever("\n--- Anúncios ---");
-                                for (int i = 0; i < anuncios.size(); i++) {
-                                    Anuncio a = anuncios.get(i);
+                                saida.escrever("\n--- Anúncios ativos ---");
+                                for (int i = 0; i < ativos.size(); i++) {
+                                    Anuncio a = ativos.get(i);
                                     saida.escrever((i + 1) + ") " + a.getTitulo() + " | " + FormatadorMoeda.formatarReal(a.getPreco()));
                                 }
                                 saida.escreverSemQuebra("Número do anúncio para visualizar: ");
@@ -449,8 +451,8 @@ public class Main {
                                 } catch (NumberFormatException e) {
                                     n = 0;
                                 }
-                                if (n >= 1 && n <= anuncios.size()) {
-                                    Anuncio a = anuncios.get(n - 1);
+                                if (n >= 1 && n <= ativos.size()) {
+                                    Anuncio a = ativos.get(n - 1);
                                     usuario.visualizarAnuncio(a);
                                     detalhesAnuncio(saida, a);
                                     if (!"Arquivado".equals(a.getEstadoAtual())) {
@@ -472,18 +474,22 @@ public class Main {
                                                 saida.escrever("Pagamento cancelado.");
                                             }
                                         }
+                                        pausarParaContinuar(saida, sc);
                                     }
                                 } else {
                                     saida.escrever("Anúncio inválido.");
+                                    pausarParaContinuar(saida, sc);
                                 }
                             }
                         } else if (acao == 3) {
-                            if (anuncios.isEmpty()) {
-                                saida.escrever("Não há anúncios.");
+                            List<Anuncio> ativos = filtrarAnunciosAtivos(anuncios);
+                            if (ativos.isEmpty()) {
+                                saida.escrever("Não há anúncios ativos para favoritar.");
+                                pausarParaContinuar(saida, sc);
                             } else {
-                                saida.escrever("\n--- Anúncios ---");
-                                for (int i = 0; i < anuncios.size(); i++) {
-                                    Anuncio a = anuncios.get(i);
+                                saida.escrever("\n--- Anúncios ativos ---");
+                                for (int i = 0; i < ativos.size(); i++) {
+                                    Anuncio a = ativos.get(i);
                                     saida.escrever((i + 1) + ") " + a.getTitulo() + " | " + FormatadorMoeda.formatarReal(a.getPreco()));
                                 }
                                 saida.escreverSemQuebra("Número do anúncio para favoritar: ");
@@ -493,12 +499,13 @@ public class Main {
                                 } catch (NumberFormatException e) {
                                     n = 0;
                                 }
-                                if (n >= 1 && n <= anuncios.size()) {
-                                    usuario.favoritarAnuncio(anuncios.get(n - 1));
+                                if (n >= 1 && n <= ativos.size()) {
+                                    usuario.favoritarAnuncio(ativos.get(n - 1));
                                     saida.escrever("Anúncio favoritado.");
                                 } else {
                                     saida.escrever("Anúncio inválido.");
                                 }
+                                pausarParaContinuar(saida, sc);
                             }
                         } else if (acao == 4) {
                             List<SolicitacaoCompra> pendentesDoVendedor = new ArrayList<>();
@@ -507,6 +514,7 @@ public class Main {
                             }
                             if (pendentesDoVendedor.isEmpty()) {
                                 saida.escrever("Nenhuma mensagem (pagamento pendente de confirmação) para seus anúncios.");
+                                pausarParaContinuar(saida, sc);
                             } else {
                                 saida.escrever("\n--- Mensagens: pagamentos aguardando sua confirmação ---");
                                 for (int i = 0; i < pendentesDoVendedor.size(); i++) {
@@ -521,21 +529,27 @@ public class Main {
                                     compras.add(new Compra(s.getComprador(), s.getAnuncio()));
                                     s.getAnuncio().setEstado(new ArquivadoState());
                                     saida.escrever("Pagamento confirmado. Imóvel marcado como " + (s.getAnuncio().getTipoOferta() == TipoOferta.ALUGUEL ? "alugado" : s.getAnuncio().getTipoOferta() == TipoOferta.TEMPORADA ? "alugado (temporada)" : "vendido") + ". Anúncio arquivado.");
+                                    pausarParaContinuar(saida, sc);
                                 } else {
                                     saida.escrever("Solicitação inválida.");
+                                    pausarParaContinuar(saida, sc);
                                 }
                             }
                         } else {
                             saida.escrever("Opção inválida.");
+                            pausarParaContinuar(saida, sc);
                         }
                 } else if (usuarios.isEmpty()) {
                     saida.escrever("Cadastre um usuário primeiro.");
+                    pausarParaContinuar(saida, sc);
                 } else {
                     saida.escrever("Usuário inválido.");
+                    pausarParaContinuar(saida, sc);
                 }
             } else if (opcao == 7) {
                 if (usuarios.isEmpty() || anuncios.isEmpty()) {
                     saida.escrever("Cadastre usuários e anúncios primeiro.");
+                    pausarParaContinuar(saida, sc);
                 } else {
                     saida.escrever("\n--- Chat ---");
                     saida.escrever("1 - Interessado: conversar sobre um anúncio");
@@ -557,23 +571,27 @@ public class Main {
                         try { ic = Integer.parseInt(sc.nextLine().trim()); } catch (NumberFormatException e) { ic = 0; }
                         if (ic < 1 || ic > usuarios.size()) {
                             saida.escrever("Usuário inválido.");
+                            pausarParaContinuar(saida, sc);
                         } else {
-                            saida.escrever("\n--- Anúncios ---");
-                            for (int i = 0; i < anuncios.size(); i++) {
-                                Anuncio a = anuncios.get(i);
+                            List<Anuncio> ativosChat = filtrarAnunciosAtivos(anuncios);
+                            saida.escrever("\n--- Anúncios ativos ---");
+                            for (int i = 0; i < ativosChat.size(); i++) {
+                                Anuncio a = ativosChat.get(i);
                                 saida.escrever((i + 1) + ") " + a.getTitulo() + " | " + FormatadorMoeda.formatarReal(a.getPreco()));
                             }
                             saida.escreverSemQuebra("Número do anúncio: ");
                             int ia;
                             try { ia = Integer.parseInt(sc.nextLine().trim()); } catch (NumberFormatException e) { ia = 0; }
-                            if (ia < 1 || ia > anuncios.size()) {
+                            if (ia < 1 || ia > ativosChat.size()) {
                                 saida.escrever("Anúncio inválido.");
+                                pausarParaContinuar(saida, sc);
                             } else {
                                 Usuario interessado = usuarios.get(ic - 1);
-                                Anuncio anuncio = anuncios.get(ia - 1);
+                                Anuncio anuncio = ativosChat.get(ia - 1);
                                 Usuario dono = donoDoAnuncio.get(anuncio);
                                 if (dono == null) {
                                     saida.escrever("Anúncio sem dono associado.");
+                                    pausarParaContinuar(saida, sc);
                                 } else {
                                     anuncio.adicionarInteressado(interessado);
                                     Conversa conv = null;
@@ -601,6 +619,7 @@ public class Main {
                         try { ia = Integer.parseInt(sc.nextLine().trim()); } catch (NumberFormatException e) { ia = 0; }
                         if (ia < 1 || ia > usuarios.size()) {
                             saida.escrever("Usuário inválido.");
+                            pausarParaContinuar(saida, sc);
                         } else {
                             Usuario dono = usuarios.get(ia - 1);
                             List<Conversa> convsDoDono = new ArrayList<>();
@@ -609,6 +628,7 @@ public class Main {
                             }
                             if (convsDoDono.isEmpty()) {
                                 saida.escrever("Nenhuma conversa ainda.");
+                                pausarParaContinuar(saida, sc);
                             } else {
                                 saida.escrever("\n--- Suas conversas ---");
                                 for (int i = 0; i < convsDoDono.size(); i++) {
@@ -623,11 +643,13 @@ public class Main {
                                     entrarNoChat(sc, saida, conv, conv.getInteressado(), dono, false);
                                 } else {
                                     saida.escrever("Conversa inválida.");
+                                    pausarParaContinuar(saida, sc);
                                 }
                             }
                         }
                     } else {
                         saida.escrever("Opção inválida.");
+                        pausarParaContinuar(saida, sc);
                     }
                 }
             } else if (opcao == 8) {
@@ -641,9 +663,7 @@ public class Main {
                         saida.escrever((i + 1) + ") " + c.getComprador().getNome() + " | \"" + c.getAnuncio().getTitulo() + "\" | " + FormatadorMoeda.formatarReal(c.getAnuncio().getPreco()) + " | " + c.getData().format(fmt));
                     }
                 }
-                saida.escrever("");
-                saida.escrever("Pressione Enter para continuar...");
-                sc.nextLine();
+                pausarParaContinuar(saida, sc);
             } else if (opcao == 9) {
                 saida.escrever("\n--- Log de mudanças de estado ---");
                 List<LogMudancaEstado.EntradaLogEstado> entradas = LogMudancaEstado.getInstancia().getEntradas();
@@ -654,13 +674,46 @@ public class Main {
                         saida.escrever(e.toString());
                     }
                 }
-                saida.escrever("");
-                saida.escrever("Pressione Enter para continuar...");
-                sc.nextLine();
+                pausarParaContinuar(saida, sc);
+            } else if (opcao == 11 && usuarioLogado != null) {
+                List<Anuncio> rascunhos = new ArrayList<>();
+                for (Anuncio a : anuncios) {
+                    if (donoDoAnuncio.get(a) == usuarioLogado && "Rascunho".equals(a.getEstadoAtual())) {
+                        rascunhos.add(a);
+                    }
+                }
+                if (rascunhos.isEmpty()) {
+                    saida.escrever("Você não tem anúncios em rascunho para submeter.");
+                } else {
+                    saida.escrever("\n--- Submeter anúncio (RF03) ---");
+                    for (int i = 0; i < rascunhos.size(); i++) {
+                        Anuncio a = rascunhos.get(i);
+                        saida.escrever((i + 1) + ") " + a.getTitulo() + " | " + FormatadorMoeda.formatarReal(a.getPreco()) + " | " + a.getEstadoAtual());
+                    }
+                    saida.escreverSemQuebra("Número do anúncio para submeter (1-" + rascunhos.size() + ") ou 0 para cancelar: ");
+                    int idx = lerInt(sc, 0);
+                    if (idx >= 1 && idx <= rascunhos.size()) {
+                        Anuncio a = rascunhos.get(idx - 1);
+                        ServicoModeracao servicoMod = new ServicoModeracao();
+                        ResultadoModeracao res = servicoMod.validarRegras(a);
+                        if (res.isAprovado()) {
+                            a.submeter();
+                            saida.escrever("Anúncio enviado para moderação. Aguarde aprovação para publicação.");
+                        } else {
+                            saida.escrever("Anúncio não aprovado na validação automática:");
+                            for (String err : res.getErros()) saida.escrever("  - " + err);
+                            saida.escrever("Corrija e tente submeter novamente.");
+                        }
+                    } else {
+                        saida.escrever("Cancelado.");
+                    }
+                }
+                pausarParaContinuar(saida, sc);
             } else if (opcao == 0) {
                 saida.escrever("Até logo.");
             } else {
                 saida.escrever("Opção inválida.");
+                pausarParaContinuar(saida, sc);
             }
         } while (opcao != 0);
 
@@ -712,6 +765,15 @@ public class Main {
         }
     }
 
+    /** RF03 - Retorna apenas anúncios com estado Ativo (publicados após moderação). */
+    private static List<Anuncio> filtrarAnunciosAtivos(List<Anuncio> anuncios) {
+        List<Anuncio> ativos = new ArrayList<>();
+        for (Anuncio a : anuncios) {
+            if ("Ativo".equals(a.getEstadoAtual())) ativos.add(a);
+        }
+        return ativos;
+    }
+
     /** Busca usuário por email (ignora maiúsculas/minúsculas). Retorna o primeiro encontrado ou null. */
     private static Usuario buscarUsuarioPorEmail(List<Usuario> usuarios, String email) {
         if (email == null || email.isEmpty()) return null;
@@ -728,6 +790,27 @@ public class Main {
 
     private static int lerInt(Scanner sc, int padrao) {
         try { return Integer.parseInt(sc.nextLine().trim()); } catch (NumberFormatException e) { return padrao; }
+    }
+
+    /** Pausa para o usuário ler a saída antes de continuar (evita que o menu apareça rápido demais). */
+    private static void pausarParaContinuar(Saida saida, Scanner sc) {
+        saida.escrever("");
+        saida.escrever("Pressione Enter para continuar...");
+        sc.nextLine();
+    }
+
+    /** RF02: lê double; se a linha for vazia (Enter), retorna o padrão. */
+    private static double lerDoubleComPadrao(Scanner sc, double padrao) {
+        String line = sc.nextLine().trim();
+        if (line.isEmpty()) return padrao;
+        try { return Double.parseDouble(line.replace(",", ".")); } catch (NumberFormatException e) { return padrao; }
+    }
+
+    /** RF02: lê int; se a linha for vazia (Enter), retorna o padrão. */
+    private static int lerIntComPadrao(Scanner sc, int padrao) {
+        String line = sc.nextLine().trim();
+        if (line.isEmpty()) return padrao;
+        try { return Integer.parseInt(line); } catch (NumberFormatException e) { return padrao; }
     }
 
     private static void detalhesAnuncio(Saida saida, Anuncio a) {

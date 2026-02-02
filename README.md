@@ -30,7 +30,7 @@ O **MyHome** funciona como um **classificado imobiliário digital**: quem anunci
 ### Principais funcionalidades
 
 - **Acesso ao sistema:** entrada por e-mail (cadastro automático se o usuário não existir); menu reduzido ao logar (mensagens do chat e confirmações de pagamento) e menu completo com todas as opções.
-- **Anúncios:** criação de anúncios com tipo de oferta (venda/aluguel/temporada), valores, endereço, bairro (ex.: Jaguaribe, Castelo Branco, Bancários, Bessa, Tambaú, Altiplano), área, descrição e suítes; validação em cadeia (preço, título, imóvel) antes de publicar.
+- **Anúncios (RF02):** criação de anúncios a partir de **configuração padrão** por tipo de imóvel (casa, apartamento, terreno). Ex.: apartamento inicia com unidade habitacional em condomínio, 2 quartos, 60 m², 1 suíte, andar 1; casa com 80 m², 1 suíte; terreno com 200 m². O usuário pode manter os valores padrão (Enter) ou alterar. Tipo de oferta (venda/aluguel/temporada), valores, endereço, bairro; validação em cadeia (preço, título, imóvel) antes de publicar.
 - **Busca avançada:** critérios opcionais e combináveis — o usuário escolhe quais usar (1=Tipo, 2=Bairro, 3=Preço, 4=Área, 5=Quartos) e informa apenas os valores desejados; filtros aplicados em conjunto (AND).
 - **Visualização, favoritos e compra/aluguel:** a partir do anúncio ou da busca; escolha da forma de pagamento (cartão, PIX, boleto); geração de solicitação de pagamento aguardando confirmação do vendedor.
 - **Chat:** conversas entre interessado e dono do anúncio, mediadas pela plataforma (padrão Mediator).
@@ -195,15 +195,15 @@ Se os arquivos existirem, usuários e anúncios são carregados automaticamente 
 | `ServicoPagamento` | Contexto que usa `FormaPagamento`. |
 | `PlanoAssinatura` | Enum de planos (Básico, Premium, Ilimitado). |
 
-### `prototype`
+### `prototype` (RF02 – Prototype)
 
 | Classe | Descrição |
 |--------|-----------|
-| `ImovelPrototype` | Interface do protótipo de imóvel. |
-| `CasaPadrao` | Protótipo de casa. |
-| `ApartamentoPadrao` | Protótipo de apartamento. |
-| `TerrenoPadrao` | Protótipo de terreno. |
-| `ImovelPrototypeRegistry` | Registro de protótipos. |
+| `ImovelPrototype` | Interface do protótipo de imóvel (clone). |
+| `CasaPadrao` | Protótipo de casa: 80 m², 1 suíte, "Casa residencial padrão". |
+| `ApartamentoPadrao` | Protótipo de apartamento: unidade habitacional em condomínio, 2 quartos, 60 m², 1 suíte, andar 1. |
+| `TerrenoPadrao` | Protótipo de terreno: 200 m², "Terreno padrão". |
+| `ImovelPrototypeRegistry` | Registro de protótipos; `criarRegistroPadrao()` e `clonarPrototipo(tipo)`; novos tipos podem ser registrados no futuro. |
 
 ### `saida` (E2)
 
@@ -247,16 +247,55 @@ Se os arquivos existirem, usuários e anúncios são carregados automaticamente 
 | **Factory Method** | `factory/` | `ImovelFactory` define `criarImovel()`; `CasaFactory`, `ApartamentoFactory` e `TerrenoFactory` criam o tipo correspondente. |
 | **Chain of Responsibility** | `validacao/` | `ValidadorAnuncio` encadeia validadores (Preço → Título → Imóvel); cada um pode repassar ao próximo ou rejeitar. |
 | **Singleton** | `config/Configuracao` | Uma única instância de configuração; `getInstancia()` retorna o mesmo objeto; parâmetros carregados de `config.properties`. |
+| **Prototype** | `prototype/` (RF02) | Cada tipo de imóvel (casa, apartamento, terreno) tem um protótipo com configuração padrão; `ImovelPrototypeRegistry.clonarPrototipo(tipo)` retorna uma cópia; novos tipos e configurações podem ser registrados no futuro. |
 | **Template Method / Estratégia de filtro** | `busca/` | `FiltroBusca` define contrato `aceita(Anuncio)`; filtros concretos (Tipo, Bairro, Preço, Área, Quartos, Título) são combinados dinamicamente pelo `BuscaService` sem alterar o código de busca. |
+
+---
+
+## Requisitos do Projeto
+
+Lista dos requisitos considerados no projeto e onde/how são atendidos:
+
+| ID | Requisito | Onde / Como foi resolvido |
+|----|-----------|---------------------------|
+| **RF01** | Cadastro e gestão de usuários e anúncios | Menu principal: Cadastrar usuário (nome, e-mail), Listar usuários, Criar anúncio (com tipo de oferta, valores, imóvel, validação em cadeia). Entrada por e-mail; escolha de usuário quando não logado. |
+| **RF02** | Instâncias de anúncios padrão para certos tipos de imóveis | Prototype: `CasaPadrao`, `ApartamentoPadrao`, `TerrenoPadrao` com configuração padrão; `ImovelPrototypeRegistry.criarRegistroPadrao()` e `clonarPrototipo(tipo)`; criação de anúncio inicia com clone do protótipo; campos com valor padrão entre colchetes (Enter mantém). |
+| **RF03** | Publicação e moderação | Anúncios criados em **Rascunho**; opção **Submeter anúncio** aplica regras dinâmicas (termos proibidos, preço mínimo, descrição/fotos mínimas via `ServicoModeracao`); aprovado vai direto para **Ativo** (moderação automática). Busca/visualização exibem apenas anúncios **Ativos**. |
+| **RF04** | Log de mudanças de estado do anúncio | `LogMudancaEstado` (singleton) registra cada mudança (anúncio, estado anterior, estado novo); chamado em `Anuncio.setEstado`; opção "Consultar log de mudanças de estado" no menu. |
+| **RF05** | Chat e notificações | **Chat:** Mediator em `chat/` (`ChatMediator`, `Conversa`); usuários enviam mensagens via mediador. **Notificações:** Observer em `notificacao/` (`Observer`, `NotificacaoObserver`, `NotificacaoInteressadosObserver`); Adapter para e-mail/SMS (`ServicoNotificacaoExterno`, `EmailAdapter`); `Anuncio` notifica observers ao mudar estado. |
+| **RF06** | Busca avançada (múltiplos critérios, combináveis, extensível) | Strategy em `busca/`: `FiltroBusca` e implementações (Tipo, Bairro, Preço, Área, Quartos, Título); `BuscaService.buscar(anuncios, filtros)` aplica AND; usuário escolhe critérios (1,2 ou 1,2,3 etc.); novos filtros sem alterar `BuscaService`. |
+| **RF07** | Configuração centralizada | Singleton `Configuracao`; `getInstancia().carregarParametros()` lê `config.properties`; taxas, limites, termos, URLs centralizados. |
+| **E1** | Carregar dados iniciais de CSV | `CarregadorCSV.carregarUsuarios(path)` e `carregarAnuncios(path, ...)`; `dados/usuarios.csv` e `dados/anuncios.csv`; parse por `;`, suporte a tipo de oferta, área, descrição, suítes, bairro. |
+| **E2** | Abstração de saída (evitar System.out no domínio) | Interface `Saida` e `ConsoleSaida`; `Main` e observadores usam `Saida` para mensagens; facilita troca por log ou UI. |
 
 ---
 
 ## Especificação de Como Cada Requisito Foi Resolvido
 
+### RF01 – Cadastro e gestão de usuários e anúncios
+
+- **Onde:** `Main` (menu e fluxos), `usuario/Usuario`, `anuncio/Anuncio`, `imovel/`, `validacao/` (Chain of Responsibility).
+- **Como:** Opção **Cadastrar usuário** pede nome e e-mail e adiciona à lista. **Listar usuários** exibe todos. **Criar anúncio** exige usuário (logado ou escolhido na lista); pede título, tipo de oferta (venda/aluguel/temporada), valores, tipo de imóvel (Casa, Apartamento, Terreno); o imóvel é obtido por **RF02** (clone do protótipo) e o usuário pode manter padrões ou alterar (endereço, bairro, área, descrição, suítes, quartos/andar/elevador/quintal); validação em cadeia (Preço → Título → Imóvel) antes de publicar. **Entrar no sistema** por e-mail; se não existir usuário, pode cadastrar na hora.
+
+### RF02 – Instâncias de anúncios padrão para certos tipos de imóveis
+
+- **Onde:** `prototype/ImovelPrototype`, `CasaPadrao`, `ApartamentoPadrao`, `TerrenoPadrao`, `ImovelPrototypeRegistry`; uso em `Main` na criação de anúncio.
+- **Como:** Ao criar um anúncio, o usuário escolhe o tipo (Casa, Apartamento, Terreno). O sistema obtém uma **cópia** da configuração padrão via `ImovelPrototypeRegistry.criarRegistroPadrao()` e `clonarPrototipo("casa"|"apartamento"|"terreno")`. **Apartamento** inicia com: unidade habitacional em condomínio, 2 quartos, 60 m², 1 suíte, andar 1, sem elevador. **Casa** inicia com: 80 m², 1 suíte, descrição "Casa residencial padrão", sem quintal. **Terreno** inicia com: 200 m², descrição "Terreno padrão". Os campos são exibidos com o valor padrão entre colchetes (ex.: Área (m²) [60]:); o usuário pode pressionar Enter para manter o padrão ou digitar outro valor. Novas configurações podem ser adicionadas no futuro registrando novos protótipos no registro.
+
+### RF03 – Publicação e moderação
+
+- **Onde:** `estado/EstadoAnuncio`, `RascunhoState`, `AtivoState`, `ArquivadoState`; `moderacao/ServicoModeracao`, `ResultadoModeracao`; `config.properties` (regras dinâmicas: `termos.improprios`, `preco.minimo`, `moderacao.descricao.minimo`, `moderacao.fotos.minimo`); `Anuncio.quantidadeFotos`; uso em `Main` (opção 11).
+- **Como:** O anunciante cria o anúncio (estado **Rascunho**); na criação é informada a **quantidade de fotos**. Para publicar, usa a opção **11 - Submeter anúncio**: o sistema valida automaticamente (moderação automática): título e descrição não podem conter termos proibidos; preço deve ser condizente (mínimo configurável, por tipo de oferta); anúncio deve ter ao menos uma foto OU descrição com quantidade mínima de caracteres. Se aprovado, o anúncio vai direto para **Ativo** (publicado); se reprovado, permanece em Rascunho e os erros são exibidos. Busca de imóveis, visualização e favoritos exibem apenas anúncios **Ativos**. `Anuncio.setEstado(novoEstado)` dispara o log (RF04) e notificações (RF05). Ao confirmar pagamento pelo vendedor, o anúncio passa a `ArquivadoState`.
+
 ### RF04 – Log de mudanças de estado do anúncio
 
 - **Onde:** `anuncio/LogMudancaEstado`, `estado/EstadoAnuncio` e suas implementações.
 - **Como:** Ao mudar o estado do anúncio (`setEstado` em `Anuncio`), é chamado `LogMudancaEstado.getInstancia().registrar(anuncio, estadoAnterior, estadoNovo)`. O log mantém o histórico de transições (anúncio, estado anterior, estado novo). A opção **Consultar log de mudanças de estado** no menu principal exibe essas entradas.
+
+### RF05 – Chat e notificações
+
+- **Onde:** **Chat:** `chat/ChatMediator`, `Conversa`, `Mensagem`; `usuario/Usuario.enviarMensagemVia(mediator, texto)`. **Notificações:** `notificacao/Observer`, `NotificacaoObserver`, `NotificacaoInteressadosObserver`; `notificacao/ServicoNotificacaoExterno`, `EmailAdapter`; `Anuncio` mantém lista de observers e chama `notificar()` ao mudar estado.
+- **Como:** **Chat:** Padrão Mediator — usuários não se comunicam diretamente; enviam mensagens via `Conversa` (mediador). Opção **Chat** no menu permite “Interessado: conversar sobre um anúncio” e “Dono do anúncio: ver e responder conversas”. **Notificações:** Padrão Observer — ao mudar estado do anúncio, todos os observers são notificados; `NotificacaoObserver` usa serviço externo (e-mail); `NotificacaoInteressadosObserver` usa `Saida` para exibir. Adapter adapta APIs externas (e-mail/SMS) à interface `ServicoNotificacaoExterno`.
 
 ### RF06 – Busca avançada
 
